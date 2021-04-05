@@ -55,6 +55,7 @@ namespace FileToByte {
                         line = 0;
                     }
                 }
+                sb.Length -= 2;
                 sb.Append("\n}");
                 ftb.Text += sb.ToString();
             } else {
