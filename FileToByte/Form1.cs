@@ -56,7 +56,7 @@ namespace FileToByte {
                     }
                 }
                 sb.Length -= 2;
-                sb.Append("\n}");
+                sb.Append("\n};");
                 ftb.Text += sb.ToString();
             } else {
                 MessageBox.Show("Array name or File path missing!", "Missing arguments.");
