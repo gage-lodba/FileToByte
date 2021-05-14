@@ -1,22 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace FileToByte {
-    public partial class FTBWin : Form {
-        public FTBWin() {
+    public partial class FtbWin : Form {
+        public FtbWin() {
             InitializeComponent();
         }
 
-        public static string    path;
-        public static int       line;
+        public static string    Path;
+        public static int       Line;
 
         private void Close_Click(object sender, EventArgs e) {
             Application.ExitThread();
@@ -36,51 +31,53 @@ namespace FileToByte {
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.ShowDialog();
             file_path.Text = ofd.FileName;
-            path = ofd.FileName;
+            Path = ofd.FileName;
         }
     
         private void Convert_Click(object sender, EventArgs e) {
             if (array_name.Text.Length > 0 && file_path.Text.Length > 0) {
-                byte[] fileBytes = File.ReadAllBytes(path);
-
-                StringBuilder sb = new StringBuilder(fileBytes.Length);
+                var fileBytes = File.ReadAllBytes(Path);
+                var sb = new StringBuilder(fileBytes.Length);
 
                 sb.AppendLine($"BYTE {array_name.Text}[/*{fileBytes.Length}*/] = {{");
-                for (int i = 0; i < fileBytes.Length; i++) {
-                    line++;
-                    sb.Append($"\t0x{fileBytes[i]:X2}, ");
+                foreach (var t in fileBytes)
+                {
+                    Line++;
+                    sb.Append($"\t0x{t:X2}, ");
 
-                    if (line == 10) {
-                        sb.Append("\n");
-                        line = 0;
-                    }
+                    if (Line != 10) 
+                        continue;
+
+                    sb.Append("\n");
+                    Line = 0;
                 }
-                sb.Append("\n};");
+                sb.Length -= 2;
+                sb.Append("\n}");
                 ftb.Text += sb.ToString();
             } else {
-                MessageBox.Show("Array name or File path missing!", "Missing arguments.");
+                MessageBox.Show(@"Array name or File path missing!", @"Missing arguments.");
             }
         }
 
-        private bool mouseDown;
-        private Point lastLocation;
+        private bool _mouseDown;
+        private Point _lastLocation;
 
         private void titlebar_MouseDown(object sender, MouseEventArgs e) {
-            mouseDown = true;
-            lastLocation = e.Location;
+            _mouseDown = true;
+            _lastLocation = e.Location;
         }
 
-        private void titlebar_MouseMove(object sender, MouseEventArgs e) {
-            if (mouseDown) {
-                this.Location = new Point(
-                    (this.Location.X - lastLocation.X) + e.X, (this.Location.Y - lastLocation.Y) + e.Y);
+        private void titlebar_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_mouseDown) 
+                return;
 
-                this.Update();
-            }
+            this.Location = new Point((this.Location.X - _lastLocation.X) + e.X, (this.Location.Y - _lastLocation.Y) + e.Y);
+            this.Update();
         }
 
         private void titlebar_MouseUp(object sender, MouseEventArgs e) {
-            mouseDown = false;
+            _mouseDown = false;
         }
     }
 }

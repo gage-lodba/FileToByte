@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -6,6 +6,12 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>byte.ico</ApplicationIcon>
     <AssemblyName>FileToByte</AssemblyName>
+    <WeaverConfiguration>
+      <Weavers>
+        <WeaverA />
+        <WeaverB ConfigForWeaverB="$(SomeProperty)" />
+      </Weavers>
+    </WeaverConfiguration>
   </PropertyGroup>
 
 </Project>

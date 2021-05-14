@@ -1,7 +1,7 @@
 ﻿
 namespace FileToByte
 {
-    partial class FTBWin
+    partial class FtbWin
     {
         /// <summary>
         ///  Required designer variable.
@@ -29,7 +29,7 @@ namespace FileToByte
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FTBWin));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FtbWin));
             this.titlebar = new System.Windows.Forms.Panel();
             this.minimize = new System.Windows.Forms.Button();
             this.close = new System.Windows.Forms.Button();
@@ -255,7 +255,7 @@ namespace FileToByte
             this.ForeColor = System.Drawing.Color.White;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Name = "FTBWin";
+            this.Name = "FtbWin";
             this.Padding = new System.Windows.Forms.Padding(1);
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.titlebar.ResumeLayout(false);
