@@ -39,7 +39,7 @@ namespace FileToByte {
                 var fileBytes = File.ReadAllBytes(Path);
                 var sb = new StringBuilder(fileBytes.Length);
 
-                sb.AppendLine($"BYTE {array_name.Text}[/*{fileBytes.Length}*/] = {{");
+                sb.AppendLine($"unsigned char {array_name.Text}[/*{fileBytes.Length}*/] = {{");
                 foreach (var t in fileBytes)
                 {
                     Line++;
@@ -52,7 +52,7 @@ namespace FileToByte {
                     Line = 0;
                 }
                 sb.Length -= 2;
-                sb.Append("\n}");
+                sb.Append("\n};");
                 ftb.Text += sb.ToString();
             } else {
                 MessageBox.Show(@"Array name or File path missing!", @"Missing arguments.");
