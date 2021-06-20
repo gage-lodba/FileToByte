@@ -9,4 +9,4 @@ How to use:
 # The clean simple ui:
 ![image](https://user-images.githubusercontent.com/38990407/113564117-c7a5bd80-95d6-11eb-8293-2968bf20a83d.png)
 # End result:
-![image](https://user-images.githubusercontent.com/38990407/113564421-5c102000-95d7-11eb-9b24-9f7e75f27c8e.png)
+![image](https://user-images.githubusercontent.com/38990407/122667479-0d5b3680-d181-11eb-8b62-7c8f3856ba2e.png)
