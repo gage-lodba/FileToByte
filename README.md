@@ -3,7 +3,7 @@ Takes any file and converts it into hex code allowing you to have that file loca
 
 How to use:
 1. Click open button, this will open a file dialog where you are able to select the file that you would like to convert.
-2. The click the convert button and the code for your converted file will be found in the bottem box.
+2. Then click the convert button and the code for your converted file will be found in the bottom box.
 3. Copy button copies all the code for your converted file to your clip board as a quality of life feature.
 
 # The clean simple ui:
