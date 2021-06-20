@@ -7,6 +7,6 @@ How to use:
 3. Copy button copies all the code for your converted file to your clip board as a quality of life feature.
 
 # The clean simple ui:
-![image](https://user-images.githubusercontent.com/38990407/113564117-c7a5bd80-95d6-11eb-8293-2968bf20a83d.png)
+![image](https://user-images.githubusercontent.com/38990407/122670509-772f0c80-d190-11eb-9b1d-20701abbbdb9.png)
 # End result:
-![image](https://user-images.githubusercontent.com/38990407/122667479-0d5b3680-d181-11eb-8b62-7c8f3856ba2e.png)
+![image](https://user-images.githubusercontent.com/38990407/122670522-81e9a180-d190-11eb-9ff4-f144f4788883.png)
