@@ -1,5 +1,5 @@
 # FileToByte
-Takes any file and converts it into hex code allowing you to have that file localized in code for your projects and this has many benifits. An example of this having a benifit is you can convert fonts into hex in order to be used inside of an rendering, interfaces and/or games.
+This program takes a full path to a file and will convert that file into a byte array. This allows for multiple things like store fonts and/or images in memory.
 
 ## How to use:
 1. Enter the full path of the file.
