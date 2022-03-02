@@ -40,7 +40,9 @@ namespace Menu {
             ImGui::SameLine();
 
             if (ImGui::Button("Copy to clipboard", ImVec2(-1, 25.f))) {
-                glfwSetClipboardString(window, Globals::res.c_str());
+                ImGui::LogToClipboard();
+                ImGui::LogText(Globals::res.c_str());
+                ImGui::LogFinish();
             }
 
             ImGui::PushFont(Consolas);
