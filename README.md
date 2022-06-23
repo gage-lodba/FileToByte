@@ -6,6 +6,9 @@ This program takes a full path to a file and will convert that file into a byte 
 2. Then click the convert button.
 3. Copy button copies all the code.
 
+## Usage Example
+Usage for this can be seen inside of the source code.
+
 # The clean simple ui:
 ![image](https://user-images.githubusercontent.com/38990407/141835739-d9b6b840-4663-406a-a068-e5aa0df8ac42.png)
 # End result:
