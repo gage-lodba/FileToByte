@@ -15,7 +15,7 @@ namespace FileToByte {
 			return Globals::res = "";
 
 		file.seekg(0, std::ios::end);
-		buffer.reserve(file.tellg());
+		buffer.reserve((const unsigned int)file.tellg());
 		file.seekg(0, std::ios::beg);
 		buffer.insert(buffer.begin(), std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 		file.close();
@@ -24,7 +24,7 @@ namespace FileToByte {
 		std::string fileFooter = "\n};";
 
 		std::string fileContents = "";
-		for (auto i = 0; i < buffer.size(); i++) {
+		for (size_t i = 0; i < buffer.size(); i++) {
 			fileContents += "0x" + std::string(1, byte_to_hex_lookup_table[(buffer[i] & 0xF0) >> 4]) + std::string(1, byte_to_hex_lookup_table[buffer[i] & 0x0F]) + ", ";
 			if (i % 16 == 15)
 				fileContents += "\n\t";
