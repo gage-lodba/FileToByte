@@ -8,5 +8,5 @@
 #include <future>
 
 namespace FileToByte {
-	extern void Convert(std::string val);
+	extern std::string Convert(std::string val);
 }
