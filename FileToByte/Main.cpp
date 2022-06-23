@@ -6,36 +6,35 @@
 #include <STB/stb_image.h>
 
 int main() {
-    GLFWwindow* window;
+	GLFWwindow* window;
 
-    if (!glfwInit())
-        return -1;
+	if (!glfwInit())
+		return -1;
 
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    window = glfwCreateWindow(800, 600, "File To Byte", NULL, NULL);
-    
-    if (!window) {
-        glfwTerminate();
-        return -1;
-    }
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	window = glfwCreateWindow(800, 600, "File To Byte", NULL, NULL);
 
-    glfwMakeContextCurrent(window);
-    glewExperimental = GL_TRUE;
+	if (!window) {
+		glfwTerminate();
+		return -1;
+	}
 
-    if (GLEW_OK != glewInit()) {
-        std::cout << "GLEW failed to initialize." << std::endl;
-        return EXIT_FAILURE;
-    }
+	glfwMakeContextCurrent(window);
+	glewExperimental = GL_TRUE;
 
-    Menu::Initialize(window);
+	if (GLEW_OK != glewInit()) {
+		return EXIT_FAILURE;
+	}
 
-    while (!glfwWindowShouldClose(window)) {
-        Menu::DrawMenu(window);
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
+	Menu::Initialize(window);
 
-    Menu::Shutdown();
-    glfwTerminate();
-    return 0;
+	while (!glfwWindowShouldClose(window)) {
+		Menu::DrawMenu(window);
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	Menu::Shutdown();
+	glfwTerminate();
+	return 0;
 }
