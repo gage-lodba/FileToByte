@@ -1,1 +1,0 @@
-"GLFW_ICON" ICON "Icon.ico"
