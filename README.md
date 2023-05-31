@@ -1,5 +1,5 @@
-### VulkanWindow
-An example vulkan window project, using GLFW and the Vulkan SDK.
+### FileToByte
+The FileToByte program is designed to accept a full file path as input and efficiently convert the file into a byte array. This functionality offers versatile capabilities, enabling the convenient storage of fonts and/or images directly in memory.
 
 ### Dependencies:
 gcc and g++ compilers.
