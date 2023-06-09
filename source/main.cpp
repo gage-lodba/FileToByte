@@ -1,4 +1,4 @@
-#include "imgui.h"
+#include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <misc/cpp/imgui_stdlib.h>
@@ -21,8 +21,6 @@
 #define IMGUI_VULKAN_DEBUG_REPORT
 #endif
 
-#define IMGUI_ENABLE_FREETYPE
-
 static VkAllocationCallbacks*   g_Allocator = nullptr;
 static VkInstance               g_Instance = VK_NULL_HANDLE;
 static VkPhysicalDevice         g_PhysicalDevice = VK_NULL_HANDLE;
@@ -36,8 +34,6 @@ static VkDescriptorPool         g_DescriptorPool = VK_NULL_HANDLE;
 static ImGui_ImplVulkanH_Window g_MainWindowData;
 static int                      g_MinImageCount = 2;
 static bool                     g_SwapChainRebuild = false;
-
-
 
 static void glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
@@ -368,7 +364,6 @@ static void FramePresent(ImGui_ImplVulkanH_Window* wd) {
 }
 
 bool open = true;
-
 std::string VarName;
 std::string FilePath;
 std::string Result;
@@ -414,24 +409,33 @@ int main(int, char**) {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.IniFilename = nullptr;
     
+    ImColor Dim = ImColor(32, 32, 32);
+    ImColor Faint = ImColor(40, 40, 40);
+    ImColor Pale = ImColor(48, 48, 48);
+    ImColor Soft = ImColor(56, 56, 56);
     ImGuiStyle* style = &ImGui::GetStyle();
-    ImVec4* colors = style->Colors;
 
-    colors[ImGuiCol_Text]                   = ImColor(255, 255, 255, 255);
-    colors[ImGuiCol_TextDisabled]           = ImColor(127, 127, 127, 255);
-    colors[ImGuiCol_WindowBg]               = ImColor(24, 24, 24, 255);
-    colors[ImGuiCol_FrameBg]                = ImColor(32, 32, 32, 255);
-    colors[ImGuiCol_FrameBgHovered]         = ImColor(40, 40, 40, 255);
-    colors[ImGuiCol_FrameBgActive]          = ImColor(48, 48, 48, 255);
-    colors[ImGuiCol_ScrollbarBg]            = ImColor(32, 32, 32, 255);
-    colors[ImGuiCol_ScrollbarGrab]          = ImColor(48, 48, 48, 255);
-    colors[ImGuiCol_ScrollbarGrabHovered]   = ImColor(56, 56, 56, 255);
-    colors[ImGuiCol_ScrollbarGrabActive]    = ImColor(64, 64, 64, 255);
-    colors[ImGuiCol_Button]                 = ImColor(32, 32, 32, 255);
-    colors[ImGuiCol_ButtonHovered]          = ImColor(40, 40, 40, 255);
-    colors[ImGuiCol_ButtonActive]           = ImColor(48, 48, 48, 255);
-    colors[ImGuiCol_TextSelectedBg]         = ImColor(0, 127, 255, 127);
+    // Colour styling
+    style->Colors[ImGuiCol_WindowBg]               = ImColor(24, 24, 24);
 
+    style->Colors[ImGuiCol_Text]                   = ImColor(255, 255, 255);
+    style->Colors[ImGuiCol_TextSelectedBg]         = ImColor(0, 127, 255, 127);
+    style->Colors[ImGuiCol_TextDisabled]           = ImColor(127, 127, 127);
+
+    style->Colors[ImGuiCol_FrameBg]                = Dim;
+    style->Colors[ImGuiCol_FrameBgHovered]         = Faint;
+    style->Colors[ImGuiCol_FrameBgActive]          = Pale;
+
+    style->Colors[ImGuiCol_ScrollbarBg]            = Dim;
+    style->Colors[ImGuiCol_ScrollbarGrab]          = Faint;
+    style->Colors[ImGuiCol_ScrollbarGrabHovered]   = Pale;
+    style->Colors[ImGuiCol_ScrollbarGrabActive]    = Soft;
+
+    style->Colors[ImGuiCol_Button]                 = Dim;
+    style->Colors[ImGuiCol_ButtonHovered]          = Faint;
+    style->Colors[ImGuiCol_ButtonActive]           = Pale;
+
+    // Window styling
     style->WindowPadding = ImVec2(10,10);
     style->FramePadding = ImVec2(5,5);
     style->ItemSpacing = ImVec2(5,10);
@@ -517,8 +521,8 @@ int main(int, char**) {
         ImGui::NewFrame();
 
         bool open = true;
-        
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
+
         ImGui::SetNextWindowPos(viewport->WorkPos);
 		ImGui::SetNextWindowSize(viewport->WorkSize);
         ImGui::Begin("File To Byte", &open, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
@@ -532,9 +536,8 @@ int main(int, char**) {
 		ImGui::InputText("##Array Name", &VarName);
         ImGui::PopItemWidth();
 
-        if (ImGui::Button("Convert", ImVec2(-1, 25.f))) {
+        if (ImGui::Button("Convert", ImVec2(-1, 25.f)))
             Result = FileToByte::Convert(FilePath, VarName);
-		}
 
         ImGui::NextColumn();
 
