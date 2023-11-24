@@ -39,15 +39,6 @@
 #include "./fonts/Consolas.hpp"
 #include "./fonts/Roboto.hpp"
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1900) && \
-    !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
-#pragma comment(lib, "legacy_stdio_definitions")
-#endif
-
-#ifdef _DEBUG
-#define IMGUI_VULKAN_DEBUG_REPORT
-#endif
-
 static VkAllocationCallbacks* g_Allocator = nullptr;
 static VkInstance g_Instance = VK_NULL_HANDLE;
 static VkPhysicalDevice g_PhysicalDevice = VK_NULL_HANDLE;
@@ -73,23 +64,6 @@ static void check_vk_result(VkResult err) {
 
   if (err < 0) abort();
 }
-
-#ifdef IMGUI_VULKAN_DEBUG_REPORT
-static VKAPI_ATTR VkBool32 VKAPI_CALL
-debug_report(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
-             uint64_t object, size_t location, int32_t messageCode,
-             const char* pLayerPrefix, const char* pMessage, void* pUserData) {
-  (void)flags;
-  (void)object;
-  (void)location;
-  (void)messageCode;
-  (void)pUserData;
-  (void)pLayerPrefix;
-  fprintf(stderr, "[vulkan] Debug report from ObjectType: %i\nMessage: %s\n\n",
-          objectType, pMessage);
-  return VK_FALSE;
-}
-#endif
 
 static bool IsExtensionAvailable(
     const ImVector<VkExtensionProperties>& properties, const char* extension) {
@@ -147,47 +121,11 @@ static void SetupVulkan(ImVector<const char*> instance_extensions) {
       instance_extensions.push_back(
           VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
-#ifdef VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME
-    if (IsExtensionAvailable(properties,
-                             VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
-      instance_extensions.push_back(
-          VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-      create_info.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-    }
-#endif
-
-#ifdef IMGUI_VULKAN_DEBUG_REPORT
-    const char* layers[] = {"VK_LAYER_KHRONOS_validation"};
-    create_info.enabledLayerCount = 1;
-    create_info.ppEnabledLayerNames = layers;
-    instance_extensions.push_back("VK_EXT_debug_report");
-#endif
-
     create_info.enabledExtensionCount = (uint32_t)instance_extensions.Size;
     create_info.ppEnabledExtensionNames = instance_extensions.Data;
 
     err = vkCreateInstance(&create_info, g_Allocator, &g_Instance);
     check_vk_result(err);
-
-#ifdef IMGUI_VULKAN_DEBUG_REPORT
-    auto vkCreateDebugReportCallbackEXT =
-        (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
-            g_Instance, "vkCreateDebugReportCallbackEXT");
-    IM_ASSERT(vkCreateDebugReportCallbackEXT != nullptr);
-
-    VkDebugReportCallbackCreateInfoEXT debug_report_ci = {};
-    debug_report_ci.sType =
-        VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-    debug_report_ci.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT |
-                            VK_DEBUG_REPORT_WARNING_BIT_EXT |
-                            VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-    debug_report_ci.pfnCallback = debug_report;
-    debug_report_ci.pUserData = nullptr;
-
-    err = vkCreateDebugReportCallbackEXT(g_Instance, &debug_report_ci,
-                                         g_Allocator, &g_DebugReport);
-    check_vk_result(err);
-#endif
   }
 
   g_PhysicalDevice = SetupVulkan_SelectPhysicalDevice();
@@ -222,12 +160,6 @@ static void SetupVulkan(ImVector<const char*> instance_extensions) {
     properties.resize(properties_count);
     vkEnumerateDeviceExtensionProperties(g_PhysicalDevice, nullptr,
                                          &properties_count, properties.Data);
-
-#ifdef VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
-    if (IsExtensionAvailable(properties,
-                             VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME))
-      device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-#endif
 
     const float queue_priority[] = {1.0f};
 
@@ -320,14 +252,6 @@ static void SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd,
 
 static void CleanupVulkan() {
   vkDestroyDescriptorPool(g_Device, g_DescriptorPool, g_Allocator);
-
-#ifdef IMGUI_VULKAN_DEBUG_REPORT
-  auto vkDestroyDebugReportCallbackEXT =
-      (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(
-          g_Instance, "vkDestroyDebugReportCallbackEXT");
-  vkDestroyDebugReportCallbackEXT(g_Instance, g_DebugReport, g_Allocator);
-#endif
-
   vkDestroyDevice(g_Device, g_Allocator);
   vkDestroyInstance(g_Instance, g_Allocator);
 }
