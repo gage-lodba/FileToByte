@@ -22,6 +22,7 @@
   SOFTWARE.
 */
 
+#include <cstddef>
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -39,7 +40,7 @@
 #include "./fonts/Consolas.hpp"
 #include "./fonts/Roboto.hpp"
 
-static VkAllocationCallbacks* g_Allocator = nullptr;
+static VkAllocationCallbacks *g_Allocator = nullptr;
 static VkInstance g_Instance = VK_NULL_HANDLE;
 static VkPhysicalDevice g_PhysicalDevice = VK_NULL_HANDLE;
 static VkDevice g_Device = VK_NULL_HANDLE;
@@ -53,22 +54,26 @@ static ImGui_ImplVulkanH_Window g_MainWindowData;
 static int g_MinImageCount = 2;
 static bool g_SwapChainRebuild = false;
 
-static void glfw_error_callback(int error, const char* description) {
+static void glfw_error_callback(int error, const char *description) {
   fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
 static void check_vk_result(VkResult err) {
-  if (err == 0) return;
+  if (err == 0)
+    return;
 
   fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
 
-  if (err < 0) abort();
+  if (err < 0)
+    abort();
 }
 
-static bool IsExtensionAvailable(
-    const ImVector<VkExtensionProperties>& properties, const char* extension) {
-  for (const VkExtensionProperties& p : properties)
-    if (strcmp(p.extensionName, extension) == 0) return true;
+static bool
+IsExtensionAvailable(const ImVector<VkExtensionProperties> &properties,
+                     const char *extension) {
+  for (const VkExtensionProperties &p : properties)
+    if (strcmp(p.extensionName, extension) == 0)
+      return true;
 
   return false;
 }
@@ -87,7 +92,7 @@ static VkPhysicalDevice SetupVulkan_SelectPhysicalDevice() {
   err = vkEnumeratePhysicalDevices(g_Instance, &gpu_count, gpus.Data);
   check_vk_result(err);
 
-  for (VkPhysicalDevice& device : gpus) {
+  for (VkPhysicalDevice &device : gpus) {
     VkPhysicalDeviceProperties properties;
     vkGetPhysicalDeviceProperties(device, &properties);
 
@@ -95,12 +100,13 @@ static VkPhysicalDevice SetupVulkan_SelectPhysicalDevice() {
       return device;
   }
 
-  if (gpu_count > 0) return gpus[0];
+  if (gpu_count > 0)
+    return gpus[0];
 
   return VK_NULL_HANDLE;
 }
 
-static void SetupVulkan(ImVector<const char*> instance_extensions) {
+static void SetupVulkan(ImVector<const char *> instance_extensions) {
   VkResult err;
 
   {
@@ -133,8 +139,8 @@ static void SetupVulkan(ImVector<const char*> instance_extensions) {
   {
     uint32_t count;
     vkGetPhysicalDeviceQueueFamilyProperties(g_PhysicalDevice, &count, nullptr);
-    VkQueueFamilyProperties* queues =
-        reinterpret_cast<VkQueueFamilyProperties*>(
+    VkQueueFamilyProperties *queues =
+        reinterpret_cast<VkQueueFamilyProperties *>(
             malloc(sizeof(VkQueueFamilyProperties) * count));
     vkGetPhysicalDeviceQueueFamilyProperties(g_PhysicalDevice, &count, queues);
 
@@ -150,7 +156,7 @@ static void SetupVulkan(ImVector<const char*> instance_extensions) {
   }
 
   {
-    ImVector<const char*> device_extensions;
+    ImVector<const char *> device_extensions;
     device_extensions.push_back("VK_KHR_swapchain");
 
     uint32_t properties_count;
@@ -211,7 +217,7 @@ static void SetupVulkan(ImVector<const char*> instance_extensions) {
   }
 }
 
-static void SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd,
+static void SetupVulkanWindow(ImGui_ImplVulkanH_Window *wd,
                               VkSurfaceKHR surface, int width, int height) {
   wd->Surface = surface;
 
@@ -261,7 +267,7 @@ static void CleanupVulkanWindow() {
                                   g_Allocator);
 }
 
-static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data) {
+static void FrameRender(ImGui_ImplVulkanH_Window *wd, ImDrawData *draw_data) {
   VkResult err;
 
   VkSemaphore image_acquired_semaphore =
@@ -280,7 +286,7 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data) {
 
   check_vk_result(err);
 
-  ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
+  ImGui_ImplVulkanH_Frame *fd = &wd->Frames[wd->FrameIndex];
 
   {
     err = vkWaitForFences(g_Device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);
@@ -340,8 +346,9 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data) {
   }
 }
 
-static void FramePresent(ImGui_ImplVulkanH_Window* wd) {
-  if (g_SwapChainRebuild) return;
+static void FramePresent(ImGui_ImplVulkanH_Window *wd) {
+  if (g_SwapChainRebuild)
+    return;
 
   VkSemaphore render_complete_semaphore =
       wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
@@ -364,13 +371,14 @@ static void FramePresent(ImGui_ImplVulkanH_Window* wd) {
   wd->SemaphoreIndex = (wd->SemaphoreIndex + 1) % wd->ImageCount;
 }
 
-int main(int, char**) {
+int main(int, char **) {
   glfwSetErrorCallback(glfw_error_callback);
 
-  if (!glfwInit()) return 1;
+  if (!glfwInit())
+    return 1;
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  GLFWwindow* window =
+  GLFWwindow *window =
       glfwCreateWindow(800, 600, "File To Byte", nullptr, nullptr);
 
   if (!glfwVulkanSupported()) {
@@ -378,9 +386,9 @@ int main(int, char**) {
     return 1;
   }
 
-  ImVector<const char*> extensions;
+  ImVector<const char *> extensions;
   uint32_t extensions_count = 0;
-  const char** glfw_extensions =
+  const char **glfw_extensions =
       glfwGetRequiredInstanceExtensions(&extensions_count);
 
   for (uint32_t i = 0; i < extensions_count; i++)
@@ -396,12 +404,12 @@ int main(int, char**) {
 
   int w, h;
   glfwGetFramebufferSize(window, &w, &h);
-  ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
+  ImGui_ImplVulkanH_Window *wd = &g_MainWindowData;
   SetupVulkanWindow(wd, surface, w, h);
 
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
-  ImGuiIO& io = ImGui::GetIO();
+  ImGuiIO &io = ImGui::GetIO();
   (void)io;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
@@ -411,7 +419,7 @@ int main(int, char**) {
   ImColor Faint = ImColor(40, 40, 40);
   ImColor Pale = ImColor(48, 48, 48);
   ImColor Soft = ImColor(56, 56, 56);
-  ImGuiStyle* style = &ImGui::GetStyle();
+  ImGuiStyle *style = &ImGui::GetStyle();
 
   // Colour styling
   style->Colors[ImGuiCol_WindowBg] = ImColor(24, 24, 24);
@@ -460,9 +468,9 @@ int main(int, char**) {
   ImFontConfig fontConfig;
   fontConfig.FontDataOwnedByAtlas = false;
 
-  ImFont* Roboto = io.Fonts->AddFontFromMemoryCompressedTTF(
+  ImFont *Roboto = io.Fonts->AddFontFromMemoryCompressedTTF(
       Roboto_compressed_data, Roboto_compressed_size, 14.f, &fontConfig);
-  ImFont* Consolas = io.Fonts->AddFontFromMemoryCompressedTTF(
+  ImFont *Consolas = io.Fonts->AddFontFromMemoryCompressedTTF(
       Consolas_compressed_data, Consolas_compressed_size, 14.f, &fontConfig);
   io.FontDefault = Roboto;
 
@@ -494,8 +502,7 @@ int main(int, char**) {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    bool open = true;
-    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const ImGuiViewport *viewport = ImGui::GetMainViewport();
 
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -541,7 +548,7 @@ int main(int, char**) {
 
     ImGui::End();
     ImGui::Render();
-    ImDrawData* draw_data = ImGui::GetDrawData();
+    ImDrawData *draw_data = ImGui::GetDrawData();
 
     const bool is_minimized =
         (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
