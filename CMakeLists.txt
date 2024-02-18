@@ -9,9 +9,10 @@ find_package(Vulkan REQUIRED)
 add_subdirectory(glfw)
 
 set(IMGUI_DIR imgui/)
-include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends ..)
+include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends ${IMGUI_DIR}/misc/cpp ..)
 
-add_executable(FileToBye source/main.cpp
+file(GLOB sources source/*.cpp *.hpp)
+add_executable(FileToBye ${sources}
   ${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp
   ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
   ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp

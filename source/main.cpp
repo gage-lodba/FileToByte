@@ -35,7 +35,8 @@
 #include <vulkan/vulkan.h>
 
 #include "FTB.hpp"
-#include "Roboto.hpp"
+#include "fonts/Consolas.hpp"
+#include "fonts/Roboto.hpp"
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) && \
     !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
@@ -47,7 +48,6 @@
 #define APP_USE_VULKAN_DEBUG_REPORT
 #endif
 
-// Data
 static VkAllocationCallbacks* g_Allocator = nullptr;
 static VkInstance g_Instance = VK_NULL_HANDLE;
 static VkPhysicalDevice g_PhysicalDevice = VK_NULL_HANDLE;
@@ -299,7 +299,7 @@ static void CleanupVulkan() {
       (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(
           g_Instance, "vkDestroyDebugReportCallbackEXT");
   vkDestroyDebugReportCallbackEXT(g_Instance, g_DebugReport, g_Allocator);
-#endif  // APP_USE_VULKAN_DEBUG_REPORT
+#endif
 
   vkDestroyDevice(g_Device, g_Allocator);
   vkDestroyInstance(g_Instance, g_Allocator);
@@ -382,6 +382,7 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data) {
 
     err = vkEndCommandBuffer(fd->CommandBuffer);
     check_vk_result(err);
+
     err = vkQueueSubmit(g_Queue, 1, &info, fd->Fence);
     check_vk_result(err);
   }
@@ -391,6 +392,7 @@ static void FramePresent(ImGui_ImplVulkanH_Window* wd) {
   if (g_SwapChainRebuild) return;
   VkSemaphore render_complete_semaphore =
       wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
+
   VkPresentInfoKHR info = {};
   info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
   info.waitSemaphoreCount = 1;
@@ -398,6 +400,7 @@ static void FramePresent(ImGui_ImplVulkanH_Window* wd) {
   info.swapchainCount = 1;
   info.pSwapchains = &wd->Swapchain;
   info.pImageIndices = &wd->FrameIndex;
+
   VkResult err = vkQueuePresentKHR(g_Queue, &info);
   if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
     g_SwapChainRebuild = true;
@@ -412,8 +415,8 @@ int main(int, char**) {
   if (!glfwInit()) return 1;
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  GLFWwindow* window = glfwCreateWindow(
-      1280, 720, "Dear ImGui GLFW+Vulkan example", nullptr, nullptr);
+  GLFWwindow* window =
+      glfwCreateWindow(800, 600, "File To Byte", nullptr, nullptr);
   if (!glfwVulkanSupported()) {
     printf("GLFW: Vulkan Not Supported\n");
     return 1;
@@ -492,15 +495,18 @@ int main(int, char**) {
   init_info.CheckVkResultFn = check_vk_result;
   ImGui_ImplVulkan_Init(&init_info);
 
+  ImFontConfig fontConfig;
+  fontConfig.FontDataOwnedByAtlas = false;
   ImFont* Roboto = io.Fonts->AddFontFromMemoryCompressedTTF(
       Roboto_compressed_data, Roboto_compressed_size, 14.f, &fontConfig);
   ImFont* Consolas = io.Fonts->AddFontFromMemoryCompressedTTF(
       Consolas_compressed_data, Consolas_compressed_size, 14.f, &fontConfig);
   io.FontDefault = Roboto;
 
-  // Our state
-  bool show_demo_window = true;
-  bool show_another_window = false;
+  bool open = true;
+  std::string VarName;
+  std::string FilePath;
+  std::string Result;
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
   while (!glfwWindowShouldClose(window)) {

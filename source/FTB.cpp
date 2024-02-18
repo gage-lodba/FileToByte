@@ -27,9 +27,9 @@
 #include <format>
 #include <fstream>
 #include <iomanip>
+#include <memory>
 #include <sstream>
 #include <vector>
-#include <memory>
 
 namespace FileToByte {
 
@@ -59,8 +59,10 @@ std::string Convert(const std::string &path, const std::string &varName) {
 
     if ((Columns++ % 15) == 0) oss << "\n\t";
 
-    if (i != size - 1) oss << "0x" << std::setw(2) << value << ", ";
-    else oss << "0x" << std::setw(2) << value << "\n";
+    if (i != size - 1)
+      oss << "0x" << std::setw(2) << value << ", ";
+    else
+      oss << "0x" << std::setw(2) << value << "\n";
   }
   oss << "};\n";
 

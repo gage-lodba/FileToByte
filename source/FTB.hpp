@@ -23,11 +23,12 @@
 */
 
 #pragma once
-#include <string>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <string>
 
 namespace FileToByte {
 
