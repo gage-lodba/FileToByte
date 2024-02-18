@@ -23,15 +23,11 @@
 */
 
 #pragma once
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <string>
-
-namespace FileToByte {
+#include <format>
+#include <fstream>
+#include <iomanip>
+#include <memory>
+#include <sstream>
+#include <vector>
 
 extern std::string Convert(const std::string& Path, const std::string& VarName);
-
-}

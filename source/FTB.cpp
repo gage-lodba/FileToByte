@@ -24,15 +24,6 @@
 
 #include "../source/FTB.hpp"
 
-#include <format>
-#include <fstream>
-#include <iomanip>
-#include <memory>
-#include <sstream>
-#include <vector>
-
-namespace FileToByte {
-
 std::string Convert(const std::string &path, const std::string &varName) {
   std::ifstream file(path, std::ios::binary);
 
@@ -69,5 +60,3 @@ std::string Convert(const std::string &path, const std::string &varName) {
   // Cleanup
   return oss.str();
 }
-
-}  // namespace FileToByte

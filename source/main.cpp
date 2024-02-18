@@ -549,7 +549,7 @@ int main(int, char**) {
     ImGui::PopItemWidth();
 
     if (ImGui::Button("Convert", ImVec2(-1, 25.f)))
-      Result = FileToByte::Convert(FilePath, VarName);
+      Result = Convert(FilePath, VarName);
 
     ImGui::NextColumn();
 
