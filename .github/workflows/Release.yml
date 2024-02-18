@@ -1,0 +1,89 @@
+name: CMake
+
+on: push
+
+jobs:
+  build:
+    name: ${{ matrix.os }} Release
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: true
+
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - if: ${{matrix.os == 'ubuntu-latest'}}
+        name: Update packages
+        run: |
+          sudo apt-get upgrade -y
+          sudo apt-get install -y libglfw3-dev gcc-multilib g++-multilib libvulkan-dev libxkbcommon-dev libxinerama-dev libxcursor-dev libxi-dev
+
+      - if: ${{ matrix.os == 'windows-latest' }}
+        name: Install Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
+
+      - if: ${{matrix.os == 'ubuntu-latest'}}
+        name: Configure for linux
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_CXX_COMPILER=g++
+          -DCMAKE_C_COMPILER=gcc
+
+      - if: ${{matrix.os == 'windows-latest'}}
+        name: Configure for windows
+        run: >
+          cmake -B build
+          -G "MinGW Makefiles"
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_CXX_COMPILER=g++
+          -DCMAKE_C_COMPILER=gcc
+
+      - name: Build release
+        run: cmake --build build --config Release
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.os }}
+          path: build/**/FileToByte*
+
+  release:
+    name: Release
+    runs-on: [ubuntu-latest]
+    needs: [build]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download Linux Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ubuntu-latest
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: windows-latest
+
+      - name: Release Build
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release
+          tag_name: ${{ github.run_id }}
+          body: |
+            **This release has been built by Github Actions**
+            [Link to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          files: |
+            FileToByte
+            FileToByte.exe
