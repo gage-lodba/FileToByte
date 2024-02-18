@@ -294,7 +294,6 @@ static void CleanupVulkan() {
   vkDestroyDescriptorPool(g_Device, g_DescriptorPool, g_Allocator);
 
 #ifdef APP_USE_VULKAN_DEBUG_REPORT
-  // Remove the debug report callback
   auto vkDestroyDebugReportCallbackEXT =
       (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(
           g_Instance, "vkDestroyDebugReportCallbackEXT");
@@ -572,6 +571,7 @@ int main(int, char**) {
     ImGui::PushFont(Consolas);
     ImGui::InputTextMultiline("##Result", &Result, ImVec2(-1, -1));
     ImGui::PopFont();
+    ImGui::End();
 
     ImGui::Render();
     ImDrawData* draw_data = ImGui::GetDrawData();
