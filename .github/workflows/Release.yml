@@ -21,7 +21,6 @@ jobs:
       - if: ${{matrix.os == 'ubuntu-latest'}}
         name: Update packages
         run: |
-          sudo apt-get upgrade -y
           sudo apt-get install -y libglfw3-dev gcc-multilib g++-multilib libvulkan-dev libxkbcommon-dev libxinerama-dev libxcursor-dev libxi-dev
 
       - if: ${{ matrix.os == 'windows-latest' }}
