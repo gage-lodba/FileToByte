@@ -9,20 +9,23 @@ find_package(Vulkan REQUIRED)
 add_subdirectory(glfw)
 
 set(IMGUI_DIR imgui/)
-include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends ${IMGUI_DIR}/misc/cpp ..)
+include_directories(imgui/ imgui/backends imgui/misc/cpp)
 
-file(GLOB sources source/*.cpp *.hpp)
-add_executable(FileToByte ${sources}
-  ${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp
-  ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
-  ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp
-  ${IMGUI_DIR}/imgui.cpp
-  ${IMGUI_DIR}/imgui_draw.cpp
-  ${IMGUI_DIR}/imgui_tables.cpp
-  ${IMGUI_DIR}/imgui_widgets.cpp
-)
+file(GLOB sources source/*.cpp source/*.hpp)
+add_executable(
+  FileToByte
+  ${sources}
+  imgui/imgui.cpp
+  imgui/imgui.h
+  imgui/imgui_draw.cpp
+  imgui/imgui_tables.cpp
+  imgui/imgui_widgets.cpp
+  imgui/backends/imgui_impl_glfw.cpp
+  imgui/backends/imgui_impl_vulkan.cpp
+  imgui/misc/cpp/imgui_stdlib.cpp)
 
-target_link_libraries(FileToByte PUBLIC
-  Vulkan::Vulkan
-  glfw
-)
+target_link_libraries(FileToByte PUBLIC Vulkan::Vulkan glfw)
+
+if(WIN32)
+  set_property(TARGET FileToByte PROPERTY WIN32_EXECUTABLE true)
+endif()
