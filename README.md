@@ -2,6 +2,10 @@
 
   <h1>FileToByte</h1>
 
+  <a href="https://github.com/gage-lodba/FileToByte/actions/workflows/BuildAndRelease.yml">
+    <img src="https://github.com/gage-lodba//FileToByte/actions/workflows/BuildAndRelease.yml/badge.svg" alt="Build Status" />
+  </a>
+
 </div>
 
 FileToByte is a utility that transforms any file into a C-style array, facilitating its direct incorporation into C++ code for easy in-memory handling.
