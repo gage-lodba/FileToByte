@@ -9,12 +9,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <ios>
 #include <sstream>
 #include <string>
 #include <vector>
+
 
 typedef unsigned int stb_uint;
 typedef unsigned char stb_uchar;
