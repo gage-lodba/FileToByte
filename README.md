@@ -12,6 +12,8 @@ FileToByte is a utility that transforms any file into a C-style array, facilitat
 
 You can download latest binaries from [Releases](https://github.com/gage-lodba/FileToByte/releases/latest).
 
+<img src="assets/preview.png" alt="Preview" />
+
 ## Dependencies
 
 ![CMake](https://cmake.org/) is an open-source, cross-platform family of tools designed to build, test and package software.
