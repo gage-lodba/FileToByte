@@ -1,11 +1,12 @@
 /*
  * This is a modified version of binary_to_compressed_c.cpp
- * it returns the generated C array as a string.
+ * from the imgui library see:
+ * https://github.com/ocornut/imgui/tree/master/misc/fonts
  */
 #include "FTB.hpp"
 
-#define _CRT_SECURE_NO_WARNINGS
 #include <assert.h>
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,9 +18,15 @@ typedef unsigned char stb_uchar;
 stb_uint stb_compress(stb_uchar *out, stb_uchar *in, stb_uint len);
 
 std::string Convert(const char *filename, const char *symbol) {
-  FILE *f = fopen(filename, "rb");
+  FILE *f;
+  errno_t err;
+  err = fopen_s(&f, filename, "rb");
 
-  if (!f) return "";
+  if (!f)
+    return "";
+
+  if (err != 0)
+    return "";
 
   int data_sz;
 
@@ -102,7 +109,8 @@ static stb_uint stb_adler32(stb_uint adler32, stb_uchar *buffer,
       buffer += 8;
     }
 
-    for (; i < blocklen; ++i) s1 += *buffer++, s2 += s1;
+    for (; i < blocklen; ++i)
+      s1 += *buffer++, s2 += s1;
 
     s1 %= ADLER_MOD, s2 %= ADLER_MOD;
     buflen -= blocklen;
@@ -115,11 +123,10 @@ static unsigned int stb_matchlen(stb_uchar *m1, stb_uchar *m2,
                                  stb_uint maxlen) {
   stb_uint i;
   for (i = 0; i < maxlen; ++i)
-    if (m1[i] != m2[i]) return i;
+    if (m1[i] != m2[i])
+      return i;
   return i;
 }
-
-// simple implementation that just takes the source data in a big block
 
 static stb_uchar *stb__out;
 static FILE *stb__outfile;
@@ -130,14 +137,12 @@ static void stb__write(unsigned char v) {
   ++stb__outbytes;
 }
 
-// #define stb_out(v)    (stb__out ? *stb__out++ = (stb_uchar) (v) :
-// stb__write((stb_uchar) (v)))
-#define stb_out(v)                  \
-  do {                              \
-    if (stb__out)                   \
-      *stb__out++ = (stb_uchar)(v); \
-    else                            \
-      stb__write((stb_uchar)(v));   \
+#define stb_out(v)                                                             \
+  do {                                                                         \
+    if (stb__out)                                                              \
+      *stb__out++ = (stb_uchar)(v);                                            \
+    else                                                                       \
+      stb__write((stb_uchar)(v));                                              \
   } while (0)
 
 static void stb_out2(stb_uint v) {
@@ -169,7 +174,7 @@ static void outliterals(stb_uchar *in, int numlit) {
     stb_out(0x000020 + numlit - 1);
   else if (numlit <= 2048)
     stb_out2(0x000800 + numlit - 1);
-  else /*  numlit <= 65536) */
+  else
     stb_out3(0x070000 + numlit - 1);
 
   if (stb__out) {
@@ -179,7 +184,7 @@ static void outliterals(stb_uchar *in, int numlit) {
     fwrite(in, 1, numlit, stb__outfile);
 }
 
-static int stb__window = 0x40000;  // 256K
+static int stb__window = 0x40000;
 
 static int stb_not_crap(int best, int dist) {
   return ((best > 2 && dist <= 0x00100) || (best > 5 && dist <= 0x04000) ||
@@ -188,8 +193,6 @@ static int stb_not_crap(int best, int dist) {
 
 static stb_uint stb__hashsize = 32768;
 
-// note that you can play with the hashing functions all you
-// want without needing to change the decompressor
 #define stb__hc(q, h, c) (((h) << 7) + ((h) >> 25) + q[c])
 #define stb__hc2(q, h, c, d) (((h) << 14) + ((h) >> 18) + (q[c] << 7) + q[d])
 #define stb__hc3(q, c, d, e) ((q[c] << 14) + (q[d] << 7) + q[e])
@@ -207,9 +210,6 @@ static int stb_compress_chunk(stb_uchar *history, stb_uchar *start,
 
 #define STB__SCRAMBLE(h) (((h) + ((h) >> 16)) & mask)
 
-  // stop short of the end so we don't scan off the end doing
-  // the hashing; this means we won't compress the last few bytes
-  // unless they were part of something longer
   while (q < start + length && q + 12 < end) {
     int m;
     stb_uint h1, h2, h3, h4, h;
@@ -221,45 +221,44 @@ static int stb_compress_chunk(stb_uchar *history, stb_uchar *start,
     else
       match_max = 65536;
 
-#define stb__nc(b, d) \
+#define stb__nc(b, d)                                                          \
   ((d) <= window && ((b) > 9 || stb_not_crap((int)(b), (int)(d))))
 
-#define STB__TRY(t, p) /* avoid retrying a match we already tried */ \
-  if (p ? dist != (int)(q - t) : 1)                                  \
-    if ((m = stb_matchlen(t, q, match_max)) > best)                  \
-      if (stb__nc(m, q - (t))) best = m, dist = (int)(q - (t))
+#define STB__TRY(t, p)                                                         \
+  if (p ? dist != (int)(q - t) : 1)                                            \
+    if ((m = stb_matchlen(t, q, match_max)) > best)                            \
+      if (stb__nc(m, q - (t)))                                                 \
+  best = m, dist = (int)(q - (t))
 
-    // rather than search for all matches, only try 4 candidate locations,
-    // chosen based on 4 different hash functions of different lengths.
-    // this strategy is inspired by LZO; hashing is unrolled here using the
-    // 'hc' macro
     h = stb__hc3(q, 0, 1, 2);
     h1 = STB__SCRAMBLE(h);
     t = chash[h1];
-    if (t) STB__TRY(t, 0);
+    if (t)
+      STB__TRY(t, 0);
     h = stb__hc2(q, h, 3, 4);
     h2 = STB__SCRAMBLE(h);
     h = stb__hc2(q, h, 5, 6);
     t = chash[h2];
-    if (t) STB__TRY(t, 1);
+    if (t)
+      STB__TRY(t, 1);
     h = stb__hc2(q, h, 7, 8);
     h3 = STB__SCRAMBLE(h);
     h = stb__hc2(q, h, 9, 10);
     t = chash[h3];
-    if (t) STB__TRY(t, 1);
+    if (t)
+      STB__TRY(t, 1);
     h = stb__hc2(q, h, 11, 12);
     h4 = STB__SCRAMBLE(h);
     t = chash[h4];
-    if (t) STB__TRY(t, 1);
+    if (t)
+      STB__TRY(t, 1);
 
-    // because we use a shared hash table, can only update it
-    // _after_ we've probed all of them
     chash[h1] = chash[h2] = chash[h3] = chash[h4] = q;
 
-    if (best > 2) assert(dist > 0);
+    if (best > 2)
+      assert(dist > 0);
 
-    // see if our best match qualifies
-    if (best < 3) {  // fast path literals
+    if (best < 3) {
       ++q;
     } else if (best > 2 && best <= 0x80 && dist <= 0x100) {
       outliterals(lit_start, (int)(q - lit_start));
@@ -282,7 +281,8 @@ static int stb_compress_chunk(stb_uchar *history, stb_uchar *start,
       stb_out3(0x100000 + dist - 1);
       stb_out2(best - 1);
     } else if (best > 9 && dist <= 0x1000000) {
-      if (best > 65536) best = 65536;
+      if (best > 65536)
+        best = 65536;
       outliterals(lit_start, (int)(q - lit_start));
       lit_start = (q += best);
       if (best <= 0x100) {
@@ -294,15 +294,14 @@ static int stb_compress_chunk(stb_uchar *history, stb_uchar *start,
         stb_out3(dist - 1);
         stb_out2(best - 1);
       }
-    } else {  // fallback literals if no match was a balanced tradeoff
+    } else {
       ++q;
     }
   }
 
-  // if we didn't get all the way, add the rest to literals
-  if (q - start < length) q = start + length;
+  if (q - start < length)
+    q = start + length;
 
-  // the literals are everything from lit_start to q
   *pending_literals = (int)(q - lit_start);
 
   stb__running_adler =
@@ -316,15 +315,17 @@ static int stb_compress_inner(stb_uchar *input, stb_uint length) {
 
   stb_uchar **chash;
   chash = (stb_uchar **)malloc(stb__hashsize * sizeof(stb_uchar *));
-  if (chash == nullptr) return 0;  // failure
-  for (i = 0; i < stb__hashsize; ++i) chash[i] = nullptr;
+  if (chash == nullptr)
+    return 0; // failure
+  for (i = 0; i < stb__hashsize; ++i)
+    chash[i] = nullptr;
 
   // stream signature
   stb_out(0x57);
   stb_out(0xbc);
   stb_out2(0);
 
-  stb_out4(0);  // 64-bit length requires 32-bit leading 0
+  stb_out4(0); // 64-bit length requires 32-bit leading 0
   stb_out4(length);
   stb_out4(stb__window);
 
@@ -338,11 +339,11 @@ static int stb_compress_inner(stb_uchar *input, stb_uint length) {
 
   free(chash);
 
-  stb_out2(0x05fa);  // end opcode
+  stb_out2(0x05fa); // end opcode
 
   stb_out4(stb__running_adler);
 
-  return 1;  // success
+  return 1; // success
 }
 
 stb_uint stb_compress(stb_uchar *out, stb_uchar *input, stb_uint length) {

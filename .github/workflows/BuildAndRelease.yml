@@ -1,6 +1,12 @@
-name: CMake
+name: Build and Release
 
-on: push
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'source/**'
+      - 'CMakeLists.txt'
 
 jobs:
   build:
@@ -25,13 +31,11 @@ jobs:
           packages: libglfw3-dev gcc-multilib g++-multilib libvulkan-dev libxkbcommon-dev libxinerama-dev libxcursor-dev libxi-dev
           version: 1.0
           
-      - if: ${{ matrix.os == 'windows-latest' }}
+      - if: ${{matrix.os == 'windows-latest'}}
         name: Install Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.2.0
-        with:
-          vulkan-query-version: 1.3.204.0
-          vulkan-components: Vulkan-Headers, Vulkan-Loader
-          vulkan-use-cache: true
+        run: |
+          curl -O https://sdk.lunarg.com/sdk/download/latest/windows/vulkan_sdk.exe
+          .\vulkan_sdk.exe --accept-licenses --default-answer --confirm-command install
 
       - if: ${{matrix.os == 'ubuntu-latest'}}
         name: Configure for linux
@@ -43,12 +47,16 @@ jobs:
 
       - if: ${{matrix.os == 'windows-latest'}}
         name: Configure for windows
-        run: >
-          cmake -B build
-          -G "MinGW Makefiles"
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_CXX_COMPILER=g++
-          -DCMAKE_C_COMPILER=gcc
+        run: |
+          curl -o .\windows.json https://vulkan.lunarg.com/sdk/latest/windows.json
+          $env:VULKAN_VERSION = (Get-Content windows.json | ConvertFrom-Json).windows
+          $env:VULKAN_SDK = "C:\VulkanSDK\$env:VULKAN_VERSION"
+          $env:VK_SDK_PATH = "C:\VulkanSDK\$env:VULKAN_VERSION"
+          $env:Vulkan_LIBRARY = "C:\VulkanSDK\$env:VULKAN_VERSION\Lib\vulkan-1.lib"
+          $env:Vulkan_INCLUDE_DIR = "C:\VulkanSDK\$env:VULKAN_VERSION\Include"
+          Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
+          refreshenv
+          cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
 
       - name: Build release
         run: cmake --build build --config Release
