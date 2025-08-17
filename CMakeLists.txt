@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.11)
-project(FileToByte CXX)
+project(FileToByte)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
@@ -15,7 +15,6 @@ include_directories(imgui/ imgui/backends imgui/misc/cpp)
 file(GLOB sources 
   source/*.cpp 
   source/*.hpp
-  source/fonts/*.cpp
   source/fonts/*.hpp
   imgui/imgui.cpp
   imgui/imgui.h

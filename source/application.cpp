@@ -12,6 +12,15 @@
 #include "fonts/Consolas.hpp"
 #include "fonts/Roboto.hpp"
 
+ImFont *Roboto = nullptr;
+ImFont *Consolas = nullptr;
+
+bool open = true;
+
+std::string VarName;
+std::string FilePath;
+std::string Result;
+
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) &&                                 \
     !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
 #pragma comment(lib, "legacy_stdio_definitions")
@@ -465,10 +474,10 @@ void Application::Initialize() {
   ImFontConfig fontConfig;
   fontConfig.FontDataOwnedByAtlas = false;
 
-  ImFont *Roboto = io.Fonts->AddFontFromMemoryCompressedTTF(
+  Roboto = io.Fonts->AddFontFromMemoryCompressedTTF(
       Roboto_compressed_data, Roboto_compressed_size, 14.f, &fontConfig);
 
-  ImFont *Consolas = io.Fonts->AddFontFromMemoryCompressedTTF(
+  Consolas = io.Fonts->AddFontFromMemoryCompressedTTF(
       Consolas_compressed_data, Consolas_compressed_size, 14.f, &fontConfig);
 
   io.FontDefault = Roboto;
@@ -535,15 +544,6 @@ void Application::Run() {
   }
 }
 
-ImFont *Roboto = nullptr;
-ImFont *Consolas = nullptr;
-
-bool open = true;
-
-std::string VarName;
-std::string FilePath;
-std::string Result;
-
 void Application::ApplyTheme() {
   ImColor Dim = ImColor(32, 32, 32);
   ImColor Faint = ImColor(40, 40, 40);
@@ -587,7 +587,6 @@ void Application::Render() {
   ImGui::Begin("File To Byte", &open, window_flags);
 
   ImGui::Columns(2, "locations", false);
-  ImGui::PushFont(Roboto);
 
   ImGui::Text("Array Name");
 
@@ -596,7 +595,7 @@ void Application::Render() {
   ImGui::PopItemWidth();
 
   if (ImGui::Button("Convert", ImVec2(-1, 25.f)))
-    Result = Convert(FilePath.c_str(), VarName.c_str());
+    Result = Convert(FilePath, VarName);
 
   ImGui::NextColumn();
 
@@ -612,7 +611,6 @@ void Application::Render() {
     ImGui::LogFinish();
   }
 
-  ImGui::PopFont();
   ImGui::Columns();
 
   ImGui::PushFont(Consolas);
