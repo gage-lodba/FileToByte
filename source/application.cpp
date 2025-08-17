@@ -414,8 +414,7 @@ void Application::Initialize() {
     return;
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  m_WindowHandle =
-      glfwCreateWindow(800, 600, "Vulkan Window", nullptr, nullptr);
+  m_WindowHandle = glfwCreateWindow(800, 600, "FileToByte", nullptr, nullptr);
 
   if (!glfwVulkanSupported()) {
     printf("GLFW: Vulkan Not Supported\n");
