@@ -9,46 +9,22 @@ on:
       - 'CMakeLists.txt'
 
 jobs:
-  build:
-    name: ${{ matrix.os }} Release
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      fail-fast: true
-
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+  build-windows:
+    runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
-
-      - if: ${{matrix.os == 'ubuntu-latest'}}
-        name: Update packages
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: libglfw3-dev gcc-multilib g++-multilib libvulkan-dev libxkbcommon-dev libxinerama-dev libxcursor-dev libxi-dev
-          version: 1.0
           
-      - if: ${{matrix.os == 'windows-latest'}}
-        name: Install Vulkan SDK
+      - name: Install Vulkan SDK
         run: |
-          curl -O https://sdk.lunarg.com/sdk/download/latest/windows/vulkan_sdk.exe
+          Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/latest/windows/vulkan_sdk.exe" -OutFile .\vulkan_sdk.exe
           .\vulkan_sdk.exe --accept-licenses --default-answer --confirm-command install
 
-      - if: ${{matrix.os == 'ubuntu-latest'}}
-        name: Configure for linux
-        run: >
-          cmake -B build
-          -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_CXX_COMPILER=g++
-          -DCMAKE_C_COMPILER=gcc
-
-      - if: ${{matrix.os == 'windows-latest'}}
-        name: Configure for windows
+      - name: Configure for windows
         run: |
-          curl -o .\windows.json https://vulkan.lunarg.com/sdk/latest/windows.json
+          Invoke-WebRequest https://vulkan.lunarg.com/sdk/latest/windows.json -OutFile windows.json
           $env:VULKAN_VERSION = (Get-Content windows.json | ConvertFrom-Json).windows
           $env:VULKAN_SDK = "C:\VulkanSDK\$env:VULKAN_VERSION"
           $env:VK_SDK_PATH = "C:\VulkanSDK\$env:VULKAN_VERSION"
@@ -56,32 +32,57 @@ jobs:
           $env:Vulkan_INCLUDE_DIR = "C:\VulkanSDK\$env:VULKAN_VERSION\Include"
           Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
           refreshenv
-          cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build release
         run: cmake --build build --config Release
       
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
         with:
-          name: ${{ matrix.os }}
-          path: build/**/FileToByte*
+          name: windows-latest
+          path: build/Release/FileToByte.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Update packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib g++-multilib libglfw3-dev vulkan-tools libvulkan-dev libxkbcommon-dev libxinerama-dev libxcursor-dev libxi-dev
+
+      - name: Configure for linux
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build release
+        run: cmake --build build --config Release
+        
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: ubuntu-latest
+          path: build/FileToByte
 
   release:
     name: Release
-    runs-on: [ubuntu-latest]
-    needs: [build]
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-linux]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Download Linux Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: ubuntu-latest
 
       - name: Download Windows Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: windows-latest
 

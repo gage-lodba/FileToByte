@@ -1,26 +1,15 @@
-#include "application.hpp"
+#include "Application.h"
 
-#ifdef _WIN32
-#include <Windows.h>
+#include <iostream>
 
-int WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
-  Application app;
-
-  app.ApplyTheme();
-  app.Run();
-
-  return 0;
-}
-
-#else
-
-int main(int, char **) {
-  Application app;
-
-  app.ApplyTheme();
-  app.Run();
+int main() {
+  try {
+    Application app;
+    app.run();
+  } catch (const std::exception &e) {
+    std::cerr << "Fatal error: " << e.what() << std::endl;
+    return 1;
+  }
 
   return 0;
 }
-
-#endif

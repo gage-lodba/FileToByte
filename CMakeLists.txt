@@ -14,8 +14,8 @@ include_directories(imgui/ imgui/backends imgui/misc/cpp)
 
 file(GLOB sources 
   source/*.cpp 
-  source/*.hpp
-  source/fonts/*.hpp
+  source/*.h
+  source/fonts/*.h
   imgui/imgui.cpp
   imgui/imgui.h
   imgui/imgui_draw.cpp
@@ -35,5 +35,6 @@ target_sources(FileToByte PRIVATE ${sources})
 target_link_libraries(FileToByte PRIVATE glfw Vulkan::Vulkan)
 
 if(WIN32)
+  set_source_files_properties(source/Main.cpp PROPERTIES COMPILE_DEFINITIONS main=WinMain)
   set_property(TARGET FileToByte PROPERTY WIN32_EXECUTABLE true)
 endif()

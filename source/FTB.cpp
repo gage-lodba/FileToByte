@@ -3,12 +3,11 @@
  * from the imgui library see:
  * https://github.com/ocornut/imgui/tree/master/misc/fonts
  */
-#include "FTB.hpp"
+#include "FTB.h"
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
@@ -21,7 +20,8 @@ typedef unsigned int stb_uint;
 typedef unsigned char stb_uchar;
 stb_uint stb_compress(stb_uchar *out, stb_uchar *in, stb_uint len);
 
-std::string Convert(std::string file_path, std::string array_name) {
+std::string Convert(const std::string &file_path,
+                    const std::string &array_name) {
   std::ifstream file(file_path, std::ios::in | std::ios::binary);
 
   if (!file.is_open())
@@ -32,23 +32,22 @@ std::string Convert(std::string file_path, std::string array_name) {
   file.seekg(0, std::ios::beg);
 
   if (data_sz == -1) {
-    return "";
+    return "Failed to determine file size";
   }
 
-  std::vector<char> data(data_sz + 4);
+  std::vector<char> data(static_cast<size_t>(data_sz) + 4);
   if (!file.read(data.data(), data_sz)) {
-    return "";
+    return "Failed to read file";
   }
 
-  memset(data.data() + data_sz, 0, 4);
+  std::memset(data.data() + data_sz, 0, 4);
 
-  int maxlen = data_sz + 512 + (data_sz >> 2) + sizeof(int);
+  size_t maxlen = static_cast<size_t>(data_sz) + 512 +
+                  (static_cast<size_t>(data_sz) >> 2) + sizeof(int);
   std::vector<char> compressed(maxlen);
   int compressed_sz = stb_compress(
       reinterpret_cast<stb_uchar *>(compressed.data()),
       reinterpret_cast<stb_uchar *>(data.data()), static_cast<int>(data_sz));
-
-  memset(compressed.data() + compressed_sz, 0, maxlen - compressed_sz);
 
   std::ostringstream stream;
 
@@ -58,14 +57,15 @@ std::string Convert(std::string file_path, std::string array_name) {
   stream << " *\thttps://github.com/gage-lodba/FileToByte\n";
   stream << " */\n\n";
   stream << "static const unsigned int " << array_name
-         << "_compressed_size = " << (int)compressed_sz << ";\n";
+         << "_compressed_size = " << compressed_sz << ";\n";
   stream << "static const unsigned int " << array_name << "_compressed_data["
-         << (int)((compressed_sz + 3) / 4) * 4 << " / 4] = {";
+         << ((compressed_sz + 3) / 4) * 4 << "/4] = {";
 
   int column = 0;
   for (int i = 0; i < compressed_sz; i += 4) {
-    unsigned int d = *reinterpret_cast<unsigned int *>(compressed.data() + i);
-    if ((column++ % 8) == 0)
+    unsigned int d;
+    std::memcpy(&d, compressed.data() + i, sizeof(d));
+    if ((column++ % 6) == 0)
       stream << "\n\t0x" << std::hex << std::setw(8) << std::setfill('0') << d
              << ", ";
     else
@@ -83,21 +83,30 @@ std::string Convert(std::string file_path, std::string array_name) {
 
 static stb_uint stb_adler32(stb_uint adler32, stb_uchar *buffer,
                             stb_uint buflen) {
-  const unsigned long ADLER_MOD = 65521;
-  unsigned long s1 = adler32 & 0xffff, s2 = adler32 >> 16;
-  unsigned long blocklen, i;
+  constexpr std::uint32_t ADLER_MOD = 65521;
+  std::uint32_t s1 = adler32 & 0xffff;
+  std::uint32_t s2 = adler32 >> 16;
 
-  blocklen = buflen % 5552;
+  auto blocklen = buflen % 5552;
   while (buflen) {
-    for (i = 0; i + 7 < blocklen; i += 8) {
-      s1 += buffer[0], s2 += s1;
-      s1 += buffer[1], s2 += s1;
-      s1 += buffer[2], s2 += s1;
-      s1 += buffer[3], s2 += s1;
-      s1 += buffer[4], s2 += s1;
-      s1 += buffer[5], s2 += s1;
-      s1 += buffer[6], s2 += s1;
-      s1 += buffer[7], s2 += s1;
+    std::uint32_t i = 0;
+    for (; i + 7 < blocklen; i += 8) {
+      s1 += buffer[0];
+      s2 += s1;
+      s1 += buffer[1];
+      s2 += s1;
+      s1 += buffer[2];
+      s2 += s1;
+      s1 += buffer[3];
+      s2 += s1;
+      s1 += buffer[4];
+      s2 += s1;
+      s1 += buffer[5];
+      s2 += s1;
+      s1 += buffer[6];
+      s2 += s1;
+      s1 += buffer[7];
+      s2 += s1;
 
       buffer += 8;
     }
@@ -105,38 +114,24 @@ static stb_uint stb_adler32(stb_uint adler32, stb_uchar *buffer,
     for (; i < blocklen; ++i)
       s1 += *buffer++, s2 += s1;
 
-    s1 %= ADLER_MOD, s2 %= ADLER_MOD;
-    buflen -= blocklen;
+    s1 %= ADLER_MOD;
+    s2 %= ADLER_MOD;
+    buflen -= static_cast<stb_uint>(blocklen);
     blocklen = 5552;
   }
   return (s2 << 16) + s1;
 }
 
-static unsigned int stb_matchlen(stb_uchar *m1, stb_uchar *m2,
-                                 stb_uint maxlen) {
-  stb_uint i;
-  for (i = 0; i < maxlen; ++i)
+static stb_uint stb_matchlen(stb_uchar *m1, stb_uchar *m2, stb_uint maxlen) {
+  for (stb_uint i = 0; i < maxlen; ++i)
     if (m1[i] != m2[i])
       return i;
-  return i;
+  return maxlen;
 }
 
 static stb_uchar *stb__out;
-static FILE *stb__outfile;
-static stb_uint stb__outbytes;
 
-static void stb__write(unsigned char v) {
-  fputc(v, stb__outfile);
-  ++stb__outbytes;
-}
-
-#define stb_out(v)                                                             \
-  do {                                                                         \
-    if (stb__out)                                                              \
-      *stb__out++ = (stb_uchar)(v);                                            \
-    else                                                                       \
-      stb__write((stb_uchar)(v));                                              \
-  } while (0)
+#define stb_out(v) (*stb__out++ = static_cast<stb_uchar>(v))
 
 static void stb_out2(stb_uint v) {
   stb_out(v >> 8);
@@ -167,36 +162,33 @@ static void outliterals(stb_uchar *in, int numlit) {
     stb_out(0x000020 + numlit - 1);
   else if (numlit <= 2048)
     stb_out2(0x000800 + numlit - 1);
-  else
+  else /*  numlit <= 65536) */
     stb_out3(0x070000 + numlit - 1);
 
-  if (stb__out) {
-    memcpy(stb__out, in, numlit);
-    stb__out += numlit;
-  } else
-    fwrite(in, 1, numlit, stb__outfile);
+  std::memcpy(stb__out, in, numlit);
+  stb__out += numlit;
 }
 
-static int stb__window = 0x40000;
+static constexpr int stb__window = 0x40000; // 256K
 
-static int stb_not_crap(int best, int dist) {
+static constexpr bool stb_not_crap(int best, int dist) {
   return ((best > 2 && dist <= 0x00100) || (best > 5 && dist <= 0x04000) ||
           (best > 7 && dist <= 0x80000));
 }
 
-static stb_uint stb__hashsize = 32768;
+static constexpr stb_uint stb__hashsize = 32768;
 
 #define stb__hc(q, h, c) (((h) << 7) + ((h) >> 25) + q[c])
 #define stb__hc2(q, h, c, d) (((h) << 14) + ((h) >> 18) + (q[c] << 7) + q[d])
 #define stb__hc3(q, c, d, e) ((q[c] << 14) + (q[d] << 7) + q[e])
 
-static unsigned int stb__running_adler;
+static stb_uint stb__running_adler;
 
 static int stb_compress_chunk(stb_uchar *history, stb_uchar *start,
                               stb_uchar *end, int length, int *pending_literals,
                               stb_uchar **chash, stb_uint mask) {
   (void)history;
-  int window = stb__window;
+  [[maybe_unused]] const auto window = stb__window;
   stb_uint match_max;
   stb_uchar *lit_start = start - *pending_literals;
   stb_uchar *q = start;
@@ -210,18 +202,19 @@ static int stb_compress_chunk(stb_uchar *history, stb_uchar *start,
     int best = 2, dist = 0;
 
     if (q + 65536 > end)
-      match_max = (stb_uint)(end - q);
+      match_max = static_cast<stb_uint>(end - q);
     else
       match_max = 65536;
 
 #define stb__nc(b, d)                                                          \
-  ((d) <= window && ((b) > 9 || stb_not_crap((int)(b), (int)(d))))
+  ((d) <= window &&                                                            \
+   ((b) > 9 || stb_not_crap(static_cast<int>(b), static_cast<int>(d))))
 
 #define STB__TRY(t, p)                                                         \
-  if (p ? dist != (int)(q - t) : 1)                                            \
+  if (p ? dist != static_cast<int>(q - t) : 1)                                 \
     if ((m = stb_matchlen(t, q, match_max)) > best)                            \
       if (stb__nc(m, q - (t)))                                                 \
-  best = m, dist = (int)(q - (t))
+  best = m, dist = static_cast<int>(q - (t))
 
     h = stb__hc3(q, 0, 1, 2);
     h1 = STB__SCRAMBLE(h);
@@ -254,29 +247,29 @@ static int stb_compress_chunk(stb_uchar *history, stb_uchar *start,
     if (best < 3) {
       ++q;
     } else if (best > 2 && best <= 0x80 && dist <= 0x100) {
-      outliterals(lit_start, (int)(q - lit_start));
+      outliterals(lit_start, static_cast<int>(q - lit_start));
       lit_start = (q += best);
       stb_out(0x80 + best - 1);
       stb_out(dist - 1);
     } else if (best > 5 && best <= 0x100 && dist <= 0x4000) {
-      outliterals(lit_start, (int)(q - lit_start));
+      outliterals(lit_start, static_cast<int>(q - lit_start));
       lit_start = (q += best);
       stb_out2(0x4000 + dist - 1);
       stb_out(best - 1);
     } else if (best > 7 && best <= 0x100 && dist <= 0x80000) {
-      outliterals(lit_start, (int)(q - lit_start));
+      outliterals(lit_start, static_cast<int>(q - lit_start));
       lit_start = (q += best);
       stb_out3(0x180000 + dist - 1);
       stb_out(best - 1);
     } else if (best > 8 && best <= 0x10000 && dist <= 0x80000) {
-      outliterals(lit_start, (int)(q - lit_start));
+      outliterals(lit_start, static_cast<int>(q - lit_start));
       lit_start = (q += best);
       stb_out3(0x100000 + dist - 1);
       stb_out2(best - 1);
     } else if (best > 9 && dist <= 0x1000000) {
       if (best > 65536)
         best = 65536;
-      outliterals(lit_start, (int)(q - lit_start));
+      outliterals(lit_start, static_cast<int>(q - lit_start));
       lit_start = (q += best);
       if (best <= 0x100) {
         stb_out(0x06);
@@ -295,55 +288,44 @@ static int stb_compress_chunk(stb_uchar *history, stb_uchar *start,
   if (q - start < length)
     q = start + length;
 
-  *pending_literals = (int)(q - lit_start);
+  *pending_literals = static_cast<int>(q - lit_start);
 
   stb__running_adler =
-      stb_adler32(stb__running_adler, start, (stb_uint)(q - start));
-  return (int)(q - start);
+      stb_adler32(stb__running_adler, start, static_cast<stb_uint>(q - start));
+  return static_cast<int>(q - start);
 }
 
 static int stb_compress_inner(stb_uchar *input, stb_uint length) {
   int literals = 0;
-  stb_uint len, i;
 
-  stb_uchar **chash;
-  chash = (stb_uchar **)malloc(stb__hashsize * sizeof(stb_uchar *));
-  if (chash == nullptr)
-    return 0; // failure
-  for (i = 0; i < stb__hashsize; ++i)
-    chash[i] = nullptr;
+  std::vector<stb_uchar *> chash(stb__hashsize, nullptr);
 
-  // stream signature
   stb_out(0x57);
   stb_out(0xbc);
   stb_out2(0);
-
-  stb_out4(0); // 64-bit length requires 32-bit leading 0
+  stb_out4(0);
   stb_out4(length);
   stb_out4(stb__window);
 
   stb__running_adler = 1;
 
-  len = stb_compress_chunk(input, input, input + length, length, &literals,
-                           chash, stb__hashsize - 1);
-  assert(len == length);
+  const auto len =
+      stb_compress_chunk(input, input, input + length, length, &literals,
+                         chash.data(), stb__hashsize - 1);
+  assert(len == static_cast<int>(length));
 
   outliterals(input + length - literals, literals);
 
-  free(chash);
-
-  stb_out2(0x05fa); // end opcode
-
+  stb_out2(0x05fa);
   stb_out4(stb__running_adler);
 
-  return 1; // success
+  return 1;
 }
 
 stb_uint stb_compress(stb_uchar *out, stb_uchar *input, stb_uint length) {
   stb__out = out;
-  stb__outfile = nullptr;
 
   stb_compress_inner(input, length);
 
-  return (stb_uint)(stb__out - out);
+  return static_cast<stb_uint>(stb__out - out);
 }
