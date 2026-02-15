@@ -83,13 +83,13 @@ std::string Convert(const std::string &file_path,
 
 static stb_uint stb_adler32(stb_uint adler32, stb_uchar *buffer,
                             stb_uint buflen) {
-  constexpr std::uint32_t ADLER_MOD = 65521;
-  std::uint32_t s1 = adler32 & 0xffff;
-  std::uint32_t s2 = adler32 >> 16;
+  constexpr uint32_t ADLER_MOD = 65521;
+  uint32_t s1 = adler32 & 0xffff;
+  uint32_t s2 = adler32 >> 16;
 
   auto blocklen = buflen % 5552;
   while (buflen) {
-    std::uint32_t i = 0;
+    uint32_t i = 0;
     for (; i + 7 < blocklen; i += 8) {
       s1 += buffer[0];
       s2 += s1;
