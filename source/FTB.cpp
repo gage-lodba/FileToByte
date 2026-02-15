@@ -6,6 +6,7 @@
 #include "FTB.h"
 
 #include <cassert>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -15,6 +16,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
 
 typedef unsigned int stb_uint;
 typedef unsigned char stb_uchar;
