@@ -14,8 +14,6 @@ std::string VarName;
 std::string FilePath;
 std::string Result;
 
-UserInterface::UserInterface() noexcept {}
-
 void UserInterface::render() const { renderMainWindow(); }
 
 void UserInterface::renderMainWindow() const {

@@ -2,7 +2,7 @@
 
 class UserInterface {
 public:
-  UserInterface() noexcept;
+  UserInterface() noexcept = default;
   ~UserInterface() = default;
 
   UserInterface(const UserInterface &) = delete;

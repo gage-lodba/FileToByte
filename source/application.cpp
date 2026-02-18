@@ -3,7 +3,7 @@
 Application::Application() : Application(DEFAULT_WIDTH, DEFAULT_HEIGHT) {}
 
 Application::Application(int width, int height) {
-  window = std::make_unique<Window>(width, height, "FileToByte");
+  window = std::make_unique<Window>(width, height, "Vulkan Window");
   renderer = std::make_unique<VulkanRenderer>(window->getGLFWWindow());
 }
 
@@ -19,6 +19,4 @@ void Application::run() {
     window->pollEvents();
     renderer->drawFrame();
   }
-
-  renderer->waitIdle();
 }

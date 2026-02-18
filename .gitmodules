@@ -1,6 +1,7 @@
 [submodule "imgui"]
-	path = imgui
+	path = deps/imgui
 	url = https://github.com/ocornut/imgui.git
 [submodule "glfw"]
-	path = glfw
+	path = deps/glfw
 	url = https://github.com/glfw/glfw.git
+	branch = latest

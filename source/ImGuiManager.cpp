@@ -13,23 +13,24 @@ ImFont *Consolas = nullptr;
 
 ImGuiManager::ImGuiManager(GLFWwindow *window, VkInstance instance,
                            VkPhysicalDevice physicalDevice, VkDevice device,
-                           VkAllocationCallbacks *allocator,
                            uint32_t queueFamily, VkQueue queue,
-                           VkRenderPass renderPass, uint32_t imageCount)
-    : window(window), device(device), allocator(allocator),
-      descriptorPool(VK_NULL_HANDLE) {
+                           VkRenderPass renderPass, uint32_t minImageCount,
+                           uint32_t imageCount)
+    : device(device), descriptorPool(VK_NULL_HANDLE) {
+
+  // Create descriptor pool for ImGui
   VkDescriptorPoolSize pool_sizes[] = {
       {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1},
   };
 
-  VkDescriptorPoolCreateInfo pool_info = {};
+  VkDescriptorPoolCreateInfo pool_info{};
   pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
   pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
   pool_info.maxSets = 100;
   pool_info.poolSizeCount = sizeof(pool_sizes) / sizeof(pool_sizes[0]);
   pool_info.pPoolSizes = pool_sizes;
 
-  if (vkCreateDescriptorPool(device, &pool_info, allocator, &descriptorPool) !=
+  if (vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptorPool) !=
       VK_SUCCESS) {
     throw std::runtime_error("Failed to create ImGui descriptor pool");
   }
@@ -43,7 +44,8 @@ ImGuiManager::ImGuiManager(GLFWwindow *window, VkInstance instance,
 
   ImGui_ImplGlfw_InitForVulkan(window, true);
 
-  ImGui_ImplVulkan_InitInfo init_info = {};
+  // Initialize ImGui for Vulkan
+  ImGui_ImplVulkan_InitInfo init_info{};
   init_info.Instance = instance;
   init_info.PhysicalDevice = physicalDevice;
   init_info.Device = device;
@@ -51,12 +53,12 @@ ImGuiManager::ImGuiManager(GLFWwindow *window, VkInstance instance,
   init_info.Queue = queue;
   init_info.PipelineCache = VK_NULL_HANDLE;
   init_info.DescriptorPool = descriptorPool;
-  init_info.RenderPass = renderPass;
-  init_info.Subpass = 0;
-  init_info.MinImageCount = imageCount;
+  init_info.PipelineInfoMain.RenderPass = renderPass;
+  init_info.PipelineInfoMain.Subpass = 0;
+  init_info.MinImageCount = minImageCount;
   init_info.ImageCount = imageCount;
-  init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-  init_info.Allocator = allocator;
+  init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+  init_info.Allocator = nullptr;
   init_info.CheckVkResultFn = nullptr;
 
   ImGui_ImplVulkan_Init(&init_info);
@@ -79,7 +81,7 @@ ImGuiManager::~ImGuiManager() {
   ImGui::DestroyContext();
 
   if (descriptorPool != VK_NULL_HANDLE) {
-    vkDestroyDescriptorPool(device, descriptorPool, allocator);
+    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
   }
 }
 

@@ -7,26 +7,10 @@
 
 #include <array>
 #include <memory>
-#include <optional>
 #include <vector>
 
 class ImGuiManager;
 class UserInterface;
-
-struct QueueFamilyIndices {
-  std::optional<uint32_t> graphicsFamily;
-  std::optional<uint32_t> presentFamily;
-
-  [[nodiscard]] bool isComplete() const noexcept {
-    return graphicsFamily.has_value() && presentFamily.has_value();
-  }
-};
-
-struct SwapChainSupportDetails {
-  VkSurfaceCapabilitiesKHR capabilities;
-  std::vector<VkSurfaceFormatKHR> formats;
-  std::vector<VkPresentModeKHR> presentModes;
-};
 
 class VulkanRenderer {
 public:
@@ -38,17 +22,6 @@ public:
 
   void drawFrame();
   void waitIdle() const;
-
-  [[nodiscard]] VkDevice getDevice() const noexcept { return device; }
-  [[nodiscard]] VkPhysicalDevice getPhysicalDevice() const noexcept {
-    return physicalDevice;
-  }
-  [[nodiscard]] VkCommandPool getCommandPool() const noexcept {
-    return commandPool;
-  }
-  [[nodiscard]] VkQueue getGraphicsQueue() const noexcept {
-    return graphicsQueue;
-  }
 
 private:
   void createInstance();
@@ -73,28 +46,10 @@ private:
   [[nodiscard]] bool checkValidationLayerSupport() const;
   [[nodiscard]] bool isDeviceSuitable(VkPhysicalDevice device) const;
   [[nodiscard]] bool checkDeviceExtensionSupport(VkPhysicalDevice device) const;
-  [[nodiscard]] QueueFamilyIndices
-  findQueueFamilies(VkPhysicalDevice device) const;
-  [[nodiscard]] SwapChainSupportDetails
-  querySwapChainSupport(VkPhysicalDevice device) const;
-  [[nodiscard]] VkSurfaceFormatKHR chooseSwapSurfaceFormat(
-      const std::vector<VkSurfaceFormatKHR> &availableFormats) const;
-  [[nodiscard]] VkPresentModeKHR chooseSwapPresentMode(
-      const std::vector<VkPresentModeKHR> &availablePresentModes) const;
-  [[nodiscard]] VkExtent2D
-  chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) const;
   [[nodiscard]] std::vector<const char *> getRequiredExtensions() const;
-
-  // Debug callback
-  static VKAPI_ATTR VkBool32 VKAPI_CALL
-  debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                VkDebugUtilsMessageTypeFlagsEXT messageType,
-                const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-                void *pUserData);
 
   GLFWwindow *window;
 
-  VkAllocationCallbacks *allocator;
   VkInstance instance;
   VkDebugUtilsMessengerEXT debugMessenger;
   VkSurfaceKHR surface;
@@ -102,11 +57,14 @@ private:
   VkDevice device;
   VkQueue graphicsQueue;
   VkQueue presentQueue;
+  uint32_t graphicsQueueFamily{0};
+  uint32_t presentQueueFamily{0};
 
   VkSwapchainKHR swapChain;
   std::vector<VkImage> swapChainImages;
-  VkFormat swapChainImageFormat;
-  VkExtent2D swapChainExtent;
+  uint32_t swapChainMinImageCount{0};
+  VkFormat swapChainImageFormat{};
+  VkExtent2D swapChainExtent{};
   std::vector<VkImageView> swapChainImageViews;
   std::vector<VkFramebuffer> swapChainFramebuffers;
 

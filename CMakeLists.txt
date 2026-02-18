@@ -6,27 +6,26 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 find_package(Vulkan REQUIRED)
 
-add_subdirectory(glfw)
-include_directories(glfw/include)
+add_subdirectory(deps/glfw)
+include_directories(deps/glfw/include)
 
-set(IMGUI_DIR imgui/)
-include_directories(imgui/ imgui/backends imgui/misc/cpp)
+include_directories(deps/imgui/ deps/imgui/backends deps/imgui/misc/cpp)
 
 file(GLOB sources 
   source/*.cpp 
   source/*.h
   source/fonts/*.h
-  imgui/imgui.cpp
-  imgui/imgui.h
-  imgui/imgui_draw.cpp
-  imgui/imgui_tables.cpp
-  imgui/imgui_widgets.cpp
-  imgui/backends/imgui_impl_glfw.cpp
-  imgui/backends/imgui_impl_glfw.h
-  imgui/backends/imgui_impl_vulkan.cpp
-  imgui/backends/imgui_impl_vulkan.h
-  imgui/misc/cpp/imgui_stdlib.cpp
-  imgui/misc/cpp/imgui_stdlib.h
+  deps/imgui/imgui.cpp
+  deps/imgui/imgui.h
+  deps/imgui/imgui_draw.cpp
+  deps/imgui/imgui_tables.cpp
+  deps/imgui/imgui_widgets.cpp
+  deps/imgui/backends/imgui_impl_glfw.cpp
+  deps/imgui/backends/imgui_impl_glfw.h
+  deps/imgui/backends/imgui_impl_vulkan.cpp
+  deps/imgui/backends/imgui_impl_vulkan.h
+  deps/imgui/misc/cpp/imgui_stdlib.cpp
+  deps/imgui/misc/cpp/imgui_stdlib.h
 )
 
 add_executable(FileToByte)

@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 Window::Window(int width, int height, const std::string &title)
-    : width(width), height(height), title(title), window(nullptr) {
+    : window(nullptr), width(width), height(height), title(title) {
   initWindow();
 }
 
