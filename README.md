@@ -30,7 +30,7 @@ compact. The generated arrays match Dear ImGui's
 
 | Encoding | Output symbol | Notes |
 | --- | --- | --- |
-| **U8** (default) | `unsigned char <name>_compressed_data[]` | Decimal bytes; endianness-independent |
+| **U8** (default) | `unsigned char <name>_compressed_data[]` | Hex bytes (`0x..`); endianness-independent |
 | **U32** | `unsigned int <name>_compressed_data[]` | `0x........` words; endianness-dependent |
 | **Base85** | `const char <name>_compressed_data_base85[]` | Smallest source; load via the Base85 loader |
 

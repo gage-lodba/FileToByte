@@ -29,27 +29,28 @@ namespace {
 // covering `compressed_sz` bytes of `compressed` (which is zero-padded out to
 // the next 4-byte boundary so the 32-bit reads below stay in bounds). ---
 
-// Bytes as decimal unsigned char[] — endianness-independent. Mirrors
-// binary_to_compressed_c.cpp's SourceEncoding_U8 (the reference's default).
+// Bytes as 0x-prefixed unsigned char[] — endianness-independent. Like
+// binary_to_compressed_c.cpp's SourceEncoding_U8, but emitted as two-digit hex
+// (0x00, 0x0f, 0xff, ...) instead of the reference's decimal. Padded to a fixed
+// width and wrapped at a fixed count so the columns line up into a grid.
 void emitU8(std::ostringstream &out, const std::string &symbol,
             const std::vector<char> &compressed, int compressed_sz) {
   out << "static const unsigned int " << symbol
       << "_compressed_size = " << compressed_sz << ";\n";
   out << "static const unsigned char " << symbol << "_compressed_data["
-      << compressed_sz << "] = {";
+      << compressed_sz << "] = {" << std::hex << std::setfill('0');
 
-  int column = 0;
+  constexpr int kPerLine = 12;
   for (int i = 0; i < compressed_sz; ++i) {
-    if (column == 0)
+    if (i % kPerLine == 0)
       out << "\n\t";
-    std::string token =
-        std::to_string(static_cast<unsigned char>(compressed[i])) + ",";
-    out << token;
-    column += static_cast<int>(token.size());
-    if (column >= 180)
-      column = 0;
+    out << "0x" << std::setw(2)
+        << static_cast<unsigned int>(static_cast<unsigned char>(compressed[i]))
+        << ",";
+    if (i % kPerLine != kPerLine - 1 && i != compressed_sz - 1)
+      out << ' ';
   }
-  out << "\n};\n";
+  out << std::dec << std::setfill(' ') << "\n};\n";
 }
 
 // 32-bit words as 0x........ hex — FileToByte's previous output. Endianness

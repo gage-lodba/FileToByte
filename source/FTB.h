@@ -4,7 +4,7 @@
 // Output encoding for the generated C array, mirroring Dear ImGui's
 // binary_to_compressed_c.cpp.
 enum class Encoding {
-  U8,     // unsigned char[] of decimal bytes (reference's default since 2024;
+  U8,     // unsigned char[] of 0x-prefixed hex bytes (default;
           // endianness-independent)
   U32,    // unsigned int[] of 0x........ words (FileToByte's previous output)
   Base85, // const char[] base85 string (loads via AddFontFromMemoryCompressed
