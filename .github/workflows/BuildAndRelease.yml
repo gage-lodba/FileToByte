@@ -2,43 +2,67 @@ name: Build and Release
 
 on:
   push:
+    # No paths filter on push: a v* tag push carries no "changed files", so a
+    # paths filter would skip the run — including the release job. Branch-push
+    # noise is filtered on the pull_request side instead.
     branches:
       - main
+    tags:
+      - 'v*'
+  pull_request:
     paths:
+      - '.github/workflows/**'
       - 'source/**'
       - 'CMakeLists.txt'
+      - '.gitmodules'
+      - 'deps/VulkanWindow'
+
+concurrency:
+  # Cancel superseded runs on the same ref. Distinct refs get distinct groups,
+  # so a tag's release run is never cancelled by a later push to main.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-windows:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
-          
-      - name: Install Vulkan SDK
+
+      - name: Resolve Vulkan SDK version
+        id: vksdk
+        shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/latest/windows/vulkan_sdk.exe" -OutFile .\vulkan_sdk.exe
+          Invoke-WebRequest -Uri https://vulkan.lunarg.com/sdk/latest/windows.json -OutFile windows.json
+          $version = (Get-Content windows.json | ConvertFrom-Json).windows
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "VULKAN_SDK=C:\VulkanSDK\$version" >> $env:GITHUB_ENV
+
+      - name: Cache Vulkan SDK
+        id: cache-vulkan-sdk
+        uses: actions/cache@v4
+        with:
+          path: C:\VulkanSDK\${{ steps.vksdk.outputs.version }}
+          key: vulkan-sdk-windows-${{ steps.vksdk.outputs.version }}
+
+      - name: Install Vulkan SDK
+        if: steps.cache-vulkan-sdk.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          Start-BitsTransfer -Source https://sdk.lunarg.com/sdk/download/latest/windows/vulkan_sdk.exe -Destination vulkan_sdk.exe
           .\vulkan_sdk.exe --accept-licenses --default-answer --confirm-command install
 
-      - name: Configure for windows
-        run: |
-          Invoke-WebRequest https://vulkan.lunarg.com/sdk/latest/windows.json -OutFile windows.json
-          $env:VULKAN_VERSION = (Get-Content windows.json | ConvertFrom-Json).windows
-          $env:VULKAN_SDK = "C:\VulkanSDK\$env:VULKAN_VERSION"
-          $env:VK_SDK_PATH = "C:\VulkanSDK\$env:VULKAN_VERSION"
-          $env:Vulkan_LIBRARY = "C:\VulkanSDK\$env:VULKAN_VERSION\Lib\vulkan-1.lib"
-          $env:Vulkan_INCLUDE_DIR = "C:\VulkanSDK\$env:VULKAN_VERSION\Include"
-          Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
-          refreshenv
-          cmake -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build release
+      - name: Build
         run: cmake --build build --config Release
-      
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: windows-latest
           path: build/Release/FileToByte.exe
@@ -47,53 +71,126 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Update packages
+      - name: Install build deps
+        # GLFW is built from the VulkanWindow submodule, so we need its X11 +
+        # Wayland build deps (not a prebuilt libglfw3): xorg-dev is GLFW's
+        # recommended X11 metapackage; libxkbcommon-dev is used by both backends
+        # and isn't part of xorg-dev; Wayland needs libwayland-dev,
+        # wayland-scanner (libwayland-bin), and wayland-protocols.
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-multilib g++-multilib libglfw3-dev vulkan-tools libvulkan-dev libxkbcommon-dev libxinerama-dev libxcursor-dev libxi-dev
+          sudo apt-get install -y \
+            vulkan-tools libvulkan-dev \
+            xorg-dev libxkbcommon-dev \
+            libwayland-dev libwayland-bin wayland-protocols
 
-      - name: Configure for linux
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: ${{ github.job }}
 
-      - name: Build release
+      - name: Configure
+        # Route the compilers through ccache so the vendored deps
+        # (GLFW/ImGui/VMA) aren't recompiled from scratch on every run.
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+
+      - name: Build
         run: cmake --build build --config Release
-        
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: ubuntu-latest
           path: build/FileToByte
 
+  smoke:
+    name: Smoke test (lavapipe + validation)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install deps
+        # mesa-vulkan-drivers ships the lavapipe software ICD (the runners have
+        # no GPU); vulkan-validationlayers ships VK_LAYER_KHRONOS_validation;
+        # xvfb gives the GLFW window a virtual X server. The xorg/wayland deps
+        # are GLFW's build deps (same set as build-linux).
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libvulkan-dev vulkan-validationlayers mesa-vulkan-drivers xvfb \
+            xorg-dev libxkbcommon-dev \
+            libwayland-dev libwayland-bin wayland-protocols
+
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: ${{ github.job }}
+
+      - name: Configure (Debug compiles in the validation layer)
+        run: |
+          cmake -B build-debug -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+
+      - name: Build
+        run: cmake --build build-debug --config Debug
+
+      - name: Run headless under lavapipe with validation made fatal
+        # Renders a fixed number of frames then exits; aborts with a non-zero
+        # status on any validation error or synchronization hazard, so a
+        # regression that compiles cleanly (e.g. the libc open() symbol
+        # collision) still fails CI.
+        run: |
+          set -euo pipefail
+
+          LVP="$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -n1 || true)"
+          if [ -z "$LVP" ]; then
+            echo "::error::lavapipe ICD not found"
+            ls -la /usr/share/vulkan/icd.d/ || true
+            exit 1
+          fi
+          export VK_ICD_FILENAMES="$LVP" VK_DRIVER_FILES="$LVP"
+          echo "lavapipe ICD: $LVP"
+
+          # Guard against a false pass where the validation layer is missing and
+          # the app silently runs without it.
+          ls /usr/share/vulkan/explicit_layer.d/ | grep -qi validation \
+            || { echo "::error::validation layer manifest not installed"; exit 1; }
+
+          VULKANWINDOW_MAX_FRAMES=10 VULKANWINDOW_VALIDATION_ABORT=1 \
+            xvfb-run -a ./build-debug/FileToByte
+
   release:
     name: Release
     runs-on: ubuntu-latest
-    needs: [build-windows, build-linux]
+    needs: [build-windows, build-linux, smoke]
+    # Only publish a GitHub Release when a v* tag is pushed — not on every push
+    # to main. Build + smoke still run on all pushes/PRs.
+    if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
-      - uses: actions/checkout@v6
-
-      - name: Download Linux Artifact
-        uses: actions/download-artifact@v7
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
         with:
           name: ubuntu-latest
 
-      - name: Download Windows Artifact
-        uses: actions/download-artifact@v7
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
         with:
           name: windows-latest
 
-      - name: Release Build
+      - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Release
-          tag_name: ${{ github.run_id }}
-          body: |
-            **This release has been built by Github Actions**
-            [Link to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          generate_release_notes: true
           files: |
             FileToByte
             FileToByte.exe

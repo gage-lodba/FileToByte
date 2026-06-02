@@ -1,7 +1,3 @@
-[submodule "imgui"]
-	path = deps/imgui
-	url = https://github.com/ocornut/imgui.git
-[submodule "glfw"]
-	path = deps/glfw
-	url = https://github.com/glfw/glfw.git
-	branch = latest
+[submodule "deps/VulkanWindow"]
+	path = deps/VulkanWindow
+	url = https://github.com/gage-lodba/VulkanWindow.git
