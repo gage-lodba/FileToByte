@@ -1,7 +1,7 @@
 #pragma once
 
 class UserInterface {
-public:
+ public:
   UserInterface() noexcept = default;
   ~UserInterface() = default;
 
@@ -10,6 +10,6 @@ public:
 
   void render() const;
 
-private:
+ private:
   void renderMainWindow() const;
 };

@@ -1,12 +1,12 @@
 #include "UserInterface.h"
-#include "FTB.h"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
 
-#include "Fonts.h"
-
 #include <string>
+
+#include "FTB.h"
+#include "Fonts.h"
 
 // File-local UI state. Internal linkage is important: a previous external
 // `bool open` collided with libc's open() symbol and corrupted unrelated
@@ -18,7 +18,7 @@ std::string VarName;
 std::string FilePath;
 std::string Result;
 Encoding encoding = Encoding::U8;
-} // namespace
+}  // namespace
 
 void UserInterface::render() const { renderMainWindow(); }
 

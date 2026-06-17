@@ -1,6 +1,6 @@
-#include <iostream>
-
 #include <imgui.h>
+
+#include <iostream>
 
 #include "Application.h"
 #include "Fonts.h"
@@ -44,7 +44,7 @@ void applyStyle() {
   // swap-chain presents them verbatim, so no gamma conversion is needed.
 }
 
-} // namespace
+}  // namespace
 
 int main() {
   try {
