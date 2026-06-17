@@ -52,9 +52,14 @@ void UserInterface::renderMainWindow() const {
 
   ImGui::Columns();
 
-  // Convert spans the full window width, below both input fields.
+  // Convert spans the full window width, below both input fields. Require both
+  // a symbol and a path: an empty Array Name would emit a reserved
+  // leading-underscore identifier, and an empty path can't be opened.
+  const bool canConvert = !VarName.empty() && !FilePath.empty();
+  ImGui::BeginDisabled(!canConvert);
   if (ImGui::Button("Convert", ImVec2(-1, 25.f)))
     Result = Convert(FilePath, VarName, encoding);
+  ImGui::EndDisabled();
 
   // Output encoding — mutually exclusive, so radio buttons rather than
   // checkboxes. Drives the Encoding argument passed to Convert above.
@@ -74,14 +79,14 @@ void UserInterface::renderMainWindow() const {
   // so the result box fills the rest without pushing the button off-screen.
   const float footerHeight = 25.0f + ImGui::GetStyle().ItemSpacing.y;
   ImGui::PushFont(Consolas);
-  ImGui::InputTextMultiline("##Result", &Result, ImVec2(-1, -footerHeight));
+  // Read-only: the box is a display for generated output, so a stray keystroke
+  // shouldn't be able to edit what Copy then grabs.
+  ImGui::InputTextMultiline("##Result", &Result, ImVec2(-1, -footerHeight),
+                            ImGuiInputTextFlags_ReadOnly);
   ImGui::PopFont();
 
-  if (ImGui::Button("Copy to clipboard", ImVec2(-1, 25.f))) {
-    ImGui::LogToClipboard();
-    ImGui::LogText("%s", Result.c_str());
-    ImGui::LogFinish();
-  }
+  if (ImGui::Button("Copy to clipboard", ImVec2(-1, 25.f)))
+    ImGui::SetClipboardText(Result.c_str());
 
   ImGui::End();
 }

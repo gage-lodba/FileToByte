@@ -19,8 +19,8 @@
 #include <vector>
 
 
-typedef unsigned int stb_uint;
-typedef unsigned char stb_uchar;
+using stb_uint = unsigned int;
+using stb_uchar = unsigned char;
 stb_uint stb_compress(stb_uchar *out, stb_uchar *in, stb_uint len);
 
 namespace {
@@ -395,7 +395,10 @@ static int stb_compress_inner(stb_uchar *input, stb_uint length) {
 
   stb__running_adler = 1;
 
-  const auto len =
+  // The chunk call must run for its side effects (it writes the compressed
+  // output); only the size check is debug-only, so len is unused once asserts
+  // are compiled out in release builds.
+  [[maybe_unused]] const auto len =
       stb_compress_chunk(input, input, input + length, length, &literals,
                          chash.data(), stb__hashsize - 1);
   assert(len == static_cast<int>(length));

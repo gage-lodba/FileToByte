@@ -1,0 +1,12 @@
+---
+# Canonical style: Google — matches the VulkanWindow submodule so both halves
+# of the project format identically. Kept as BasedOnStyle (not a full
+# --dump-config) so it parses across clang-format versions: CI pins
+# clang-format-18, but newer local versions read this without erroring on keys
+# they don't recognise. Reformat with: clang-format-18 -i.
+#
+# Note: source/fonts/*.h are generated blobs — the CI format check globs
+# source/*.h (non-recursive), so they're left untouched.
+Language: Cpp
+BasedOnStyle: Google
+...

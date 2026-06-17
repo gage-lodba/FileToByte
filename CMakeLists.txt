@@ -4,11 +4,17 @@ project(FileToByte)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+# Emit build/compile_commands.json so clangd (see .clangd) can resolve includes
+# pulled in transitively from VulkanWindow, e.g. <imgui.h>.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # VulkanWindow scaffold: provides the Application/Window/VulkanRenderer/ImGui
 # stack and transitively brings in GLFW, Vulkan, VMA, and Dear ImGui.
 add_subdirectory(deps/VulkanWindow)
 
-file(GLOB sources
+# CONFIGURE_DEPENDS re-runs the glob on incremental builds, so adding a new
+# source file triggers a reconfigure instead of being silently left out.
+file(GLOB sources CONFIGURE_DEPENDS
   source/*.cpp
   source/*.h
   source/fonts/*.h

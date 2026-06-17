@@ -1,0 +1,5 @@
+# clangd looks for compile_commands.json next to a source file or in a parent
+# dir, but CMake writes it into build/. Point clangd there so includes that
+# come transitively from VulkanWindow (imgui.h, imgui_stdlib.h, ...) resolve.
+CompileFlags:
+  CompilationDatabase: build

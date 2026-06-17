@@ -1,0 +1,36 @@
+---
+# Mirrors the VulkanWindow submodule's check families (clang-analyzer +
+# modernize + google) so both halves of the project lint alike, with three
+# checks turned off to match FileToByte's established style instead of forcing
+# a reformat:
+#   - modernize-use-trailing-return-type: the code uses leading return types.
+#   - google-readability-braces-around-statements: brace-less single-statement
+#     ifs are used intentionally throughout the UI/converter code.
+#   - modernize-avoid-c-arrays: the embedded font blobs in source/fonts are
+#     generated C arrays (also excluded from the header filter below).
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  modernize-*,
+  google-*,
+  -modernize-use-trailing-return-type,
+  -google-readability-braces-around-statements,
+  -modernize-avoid-c-arrays
+WarningsAsErrors: ''
+HeaderFileExtensions:
+  - ''
+  - h
+  - hh
+  - hpp
+  - hxx
+ImplementationFileExtensions:
+  - c
+  - cc
+  - cpp
+  - cxx
+# Lint our own headers, but not the generated font blobs under source/fonts.
+HeaderFilterRegex: 'source/.*'
+ExcludeHeaderFilterRegex: 'source/fonts/.*'
+FormatStyle:     none
+SystemHeaders:   false
+...
