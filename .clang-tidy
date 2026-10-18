@@ -8,6 +8,12 @@
 #     ifs are used intentionally throughout the UI/converter code.
 #   - modernize-avoid-c-arrays: the embedded font blobs in source/fonts are
 #     generated C arrays (also excluded from the header filter below).
+#
+# Requires clang-tidy >= 19: ExcludeHeaderFilterRegex does not exist before
+# then, and clang-tidy 18 responds to the unknown key by printing a parse error,
+# discarding this whole file and linting with default checks while still exiting
+# 0 (a silent no-op). CI therefore installs a pinned clang-tidy 19.1.0 wheel and
+# asserts the version; see .github/workflows/BuildAndRelease.yml.
 Checks: >
   clang-diagnostic-*,
   clang-analyzer-*,

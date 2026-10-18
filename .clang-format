@@ -5,8 +5,17 @@
 # clang-format-18, but newer local versions read this without erroring on keys
 # they don't recognise. Reformat with: clang-format-18 -i.
 #
+# Pointer alignment is pinned explicitly on purpose. clang-format 21 changed the
+# Google style's derived alignment (DerivePointerAlignment: false,
+# PointerAlignment: Left), which contradicts this codebase's `Type *ptr` style
+# and made every file a violation under 21/22 while 18/20 passed. Pinning
+# `DerivePointerAlignment: false` + `PointerAlignment: Right` keeps 18, 20, 21
+# and 22 in agreement.
+#
 # Note: source/fonts/*.h are generated blobs — the CI format check globs
-# source/*.h (non-recursive), so they're left untouched.
+# source/*.h, tests/*.h and tests/*.cpp (non-recursive), so they're untouched.
 Language: Cpp
 BasedOnStyle: Google
+DerivePointerAlignment: false
+PointerAlignment: Right
 ...

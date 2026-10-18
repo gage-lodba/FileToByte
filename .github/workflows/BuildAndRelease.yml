@@ -11,12 +11,40 @@ on:
       - 'v*'
   pull_request:
     paths:
-      - '.github/workflows/**'
-      - 'source/**'
+      - '.github/**'
       - 'CMakeLists.txt'
+      - 'LICENSE'
+      - 'THIRD-PARTY.md'
+      - 'README.md'
+      - 'assets/**'
+      - 'licenses/**'
+      - 'resources/**'
+      - 'source/**'
+      - 'tests/**'
+      - '.clang-format'
       - '.clang-tidy'
+      - '.clangd'
       - '.gitmodules'
       - 'deps/VulkanWindow'
+  workflow_dispatch:
+
+# Least privilege by default. The release job opts into contents: write; every
+# other job only needs to read the repository. Actions are pinned to full commit
+# SHAs (see the trailing "vX.Y.Z" comments) so a re-pointed tag cannot execute
+# different code; Dependabot (.github/dependabot.yml) proposes updates.
+permissions:
+  contents: read
+
+env:
+  # Pinned explicitly: the old "resolve the latest Vulkan SDK version" flow
+  # raced latest/windows.json against the /download/latest/ installer URL and
+  # could install a different version than the cache path expected.
+  VULKAN_SDK_VERSION: '1.4.363.0'
+  # clang-tidy used by the tidy job. Must be >= 19: .clang-tidy uses
+  # ExcludeHeaderFilterRegex, which clang-tidy 18 rejects by discarding the whole
+  # config (printing an error but exiting 0, so the job used to pass while
+  # linting with default checks). Installed from the official LLVM pip wheel.
+  CLANG_TIDY_VERSION: '19.1.0'
 
 concurrency:
   # Cancel superseded runs on the same ref. Distinct refs get distinct groups,
@@ -26,53 +54,58 @@ concurrency:
 
 jobs:
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
+    timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
-      - name: Resolve Vulkan SDK version
-        id: vksdk
-        shell: pwsh
-        run: |
-          Invoke-WebRequest -Uri https://vulkan.lunarg.com/sdk/latest/windows.json -OutFile windows.json
-          $version = (Get-Content windows.json | ConvertFrom-Json).windows
-          echo "version=$version" >> $env:GITHUB_OUTPUT
-          echo "VULKAN_SDK=C:\VulkanSDK\$version" >> $env:GITHUB_ENV
-
       - name: Cache Vulkan SDK
         id: cache-vulkan-sdk
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: C:\VulkanSDK\${{ steps.vksdk.outputs.version }}
-          key: vulkan-sdk-windows-${{ steps.vksdk.outputs.version }}
+          path: C:\VulkanSDK\${{ env.VULKAN_SDK_VERSION }}
+          key: vulkan-sdk-windows-${{ env.VULKAN_SDK_VERSION }}
 
       - name: Install Vulkan SDK
         if: steps.cache-vulkan-sdk.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          Start-BitsTransfer -Source https://sdk.lunarg.com/sdk/download/latest/windows/vulkan_sdk.exe -Destination vulkan_sdk.exe
+          $url = "https://sdk.lunarg.com/sdk/download/$env:VULKAN_SDK_VERSION/windows/vulkan_sdk.exe"
+          Write-Host "Downloading $url"
+          Start-BitsTransfer -Source $url -Destination vulkan_sdk.exe
           .\vulkan_sdk.exe --accept-licenses --default-answer --confirm-command install
 
+      - name: Export Vulkan SDK environment
+        shell: pwsh
+        run: echo "VULKAN_SDK=C:\VulkanSDK\$env:VULKAN_SDK_VERSION" >> $env:GITHUB_ENV
+
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        # Pin the generator so the artifact path below cannot change when the
+        # runner image's default generator changes.
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64
 
       - name: Build
         run: cmake --build build --config Release
 
+      - name: Test (Release unit tests)
+        run: ctest --test-dir build -C Release --output-on-failure
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-latest
           path: build/Release/FileToByte.exe
+          if-no-files-found: error
 
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
@@ -90,7 +123,7 @@ jobs:
             libwayland-dev libwayland-bin wayland-protocols
 
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1
+        uses: hendrikmuhs/ccache-action@f09c25b45002a07be2955cbe52e8cee55643f89d # v1.2.24
         with:
           key: ${{ github.job }}
 
@@ -104,18 +137,23 @@ jobs:
       - name: Build
         run: cmake --build build --config Release
 
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ubuntu-latest
           path: build/FileToByte
+          if-no-files-found: error
 
   smoke:
     name: Smoke test (lavapipe + validation)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
@@ -132,7 +170,7 @@ jobs:
             libwayland-dev libwayland-bin wayland-protocols
 
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1
+        uses: hendrikmuhs/ccache-action@f09c25b45002a07be2955cbe52e8cee55643f89d # v1.2.24
         with:
           key: ${{ github.job }}
 
@@ -143,6 +181,9 @@ jobs:
 
       - name: Build
         run: cmake --build build-debug --config Debug
+
+      - name: Test (Debug unit tests)
+        run: ctest --test-dir build-debug --output-on-failure
 
       - name: Run headless under lavapipe with validation made fatal
         # Renders a fixed number of frames then exits; aborts with a non-zero
@@ -171,11 +212,12 @@ jobs:
 
   format:
     name: clang-format
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
 
     steps:
       # No submodules: we only format FileToByte's own source/, not deps.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install clang-format-18
         run: |
@@ -185,73 +227,130 @@ jobs:
       - name: Check formatting
         # Pin to one major version on purpose: clang-format's output drifts
         # between releases, so an unpinned `clang-format` would fail on untouched
-        # code the day the runner image bumps. .clang-format is a BasedOnStyle
-        # config (not a version-locked --dump-config), so it still parses under
-        # newer local versions. Glob source/*.h non-recursively so the generated
-        # blobs in source/fonts are skipped. --Werror turns any diff into failure.
+        # code the day the runner image bumps. .clang-format pins pointer
+        # alignment explicitly so 18, 20, 21 and 22 agree. Glob source/ and
+        # tests/ non-recursively so the generated blobs in source/fonts are
+        # skipped. --Werror turns any diff into failure.
         run: |
           clang-format-18 --version
-          clang-format-18 --dry-run --Werror source/*.cpp source/*.h
+          shopt -s nullglob
+          files=(source/*.cpp source/*.h tests/*.cpp tests/*.h)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::no C++ sources to format-check"
+            exit 1
+          fi
+          clang-format-18 --dry-run --Werror "${files[@]}"
 
   tidy:
     name: clang-tidy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
       - name: Install deps
         # Same configure-time deps as build-linux (find_package(Vulkan) + GLFW's
-        # X11/Wayland deps) plus clang-tidy itself. No build is needed: a
-        # configure generates compile_commands.json, which is all clang-tidy
-        # consumes — the VulkanWindow/imgui/glfw headers it pulls in are present
-        # in the checked-out source tree.
+        # X11/Wayland deps). clang-tidy itself is installed from the pinned pip
+        # wheel below, not from the distro: Ubuntu 24.04's clang-tidy is 18,
+        # which cannot parse .clang-tidy (unknown ExcludeHeaderFilterRegex) and
+        # silently falls back to default checks.
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            clang-tidy \
             libvulkan-dev \
             xorg-dev libxkbcommon-dev \
             libwayland-dev libwayland-bin wayland-protocols
 
+      - name: Install pinned clang-tidy
+        run: |
+          python3 -m pip install --break-system-packages "clang-tidy==${CLANG_TIDY_VERSION}"
+          command -v clang-tidy
+          clang-tidy --version
+
+      - name: Verify clang-tidy version and accepted config
+        # Hard failure instead of a silent downgrade to default checks: the
+        # config must be parsed (ExcludeHeaderFilterRegex present) by the exact
+        # major version we pinned.
+        run: |
+          expected_major="${CLANG_TIDY_VERSION%%.*}"
+          actual_major="$(clang-tidy --version \
+            | sed -n 's/.*LLVM version \([0-9][0-9]*\)\..*/\1/p' | head -n1)"
+          echo "expected clang-tidy major: ${expected_major}, actual: ${actual_major:-unknown}"
+          if [ "${actual_major:-}" != "${expected_major}" ]; then
+            echo "::error::clang-tidy major ${actual_major:-unknown} does not match pinned ${expected_major}"
+            exit 1
+          fi
+          clang-tidy --dump-config > "${RUNNER_TEMP}/clang-tidy-config.yml"
+          if ! grep -q "ExcludeHeaderFilterRegex" "${RUNNER_TEMP}/clang-tidy-config.yml"; then
+            echo "::error::.clang-tidy was not accepted by clang-tidy (config discarded)"
+            cat "${RUNNER_TEMP}/clang-tidy-config.yml"
+            exit 1
+          fi
+
       - name: Configure
         # CMAKE_EXPORT_COMPILE_COMMANDS is forced on in CMakeLists.txt, so this
-        # writes build/compile_commands.json.
+        # writes build/compile_commands.json. BUILD_TESTING defaults ON, so the
+        # tests targets are in the database too.
         run: cmake -B build -DCMAKE_BUILD_TYPE=Debug
 
       - name: Run clang-tidy
-        # Lint FileToByte's own sources only — the $(pwd)/source/ anchor excludes
-        # the deps/VulkanWindow/source entries in the compile DB. -quiet keeps the
-        # log readable; -warnings-as-errors='*' makes any diagnostic fail the job.
+        # Lint FileToByte's own sources and tests explicitly (rather than
+        # run-clang-tidy's version-dependent file filter), with the project's
+        # .clang-tidy check families applied. -warnings-as-errors='*' makes any
+        # diagnostic fail the job.
         run: |
-          run-clang-tidy -p build -quiet -warnings-as-errors='*' \
-            "$(pwd)/source/.*\.(cpp|h)$"
+          shopt -s nullglob
+          files=(source/*.cpp tests/*.cpp)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::no C++ sources to lint"
+            exit 1
+          fi
+          failed=0
+          for f in "${files[@]}"; do
+            echo "::group::clang-tidy ${f}"
+            clang-tidy -p build -quiet --warnings-as-errors='*' "${f}" || failed=1
+            echo "::endgroup::"
+          done
+          exit ${failed}
 
   release:
     name: Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     needs: [build-windows, build-linux, smoke, format, tidy]
     # Only publish a GitHub Release when a v* tag is pushed — not on every push
-    # to main. Build + smoke still run on all pushes/PRs.
+    # to main or a manual dispatch. Build + smoke still run on all pushes/PRs.
     if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
 
     steps:
+      # Needed so LICENSE, THIRD-PARTY.md and the licenses/ texts are available
+      # to attach to the release alongside the binaries (the artifacts only
+      # contain binaries).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
       - name: Download Linux artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: ubuntu-latest
 
       - name: Download Windows artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: windows-latest
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: |
             FileToByte
             FileToByte.exe
+            LICENSE
+            THIRD-PARTY.md
+            licenses/*.txt
