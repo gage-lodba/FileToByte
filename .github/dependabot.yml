@@ -1,0 +1,14 @@
+version: 2
+updates:
+  # Keep the workflow's SHA-pinned actions current. Actions are pinned by commit
+  # SHA in BuildAndRelease.yml, so updates arrive as reviewable PRs instead of
+  # mutable tags silently changing behaviour.
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      github-actions:
+        patterns:
+          - '*'
