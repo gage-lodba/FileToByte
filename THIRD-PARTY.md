@@ -15,7 +15,7 @@ dependencies below are statically linked into the release binaries.
 | Component | Version / pinned revision | License | Where used | Modifications |
 | --- | --- | --- | --- | --- |
 | [VulkanWindow](https://github.com/gage-lodba/VulkanWindow) | `1a7855fa7c3ebdf975d785936f442d3fe8454a16` (short: `1a7855f`), submodule `deps/VulkanWindow` | MIT (Copyright (c) 2026 Jerimiah) | Window / Vulkan / ImGui application scaffold; statically linked into `FileToByte.exe` | None (used as pinned) |
-| [Dear ImGui](https://github.com/ocornut/imgui) | `5a76f2adf1b0403b86a45010121fb32a6bff8680` (short: `5a76f2a`); `IMGUI_VERSION "1.92.9 WIP"`, `IMGUI_VERSION_NUM 19281`; submodule of VulkanWindow | MIT (Copyright (c) 2014-2026 Omar Cornut and contributors) | GUI library; statically linked. `imgui_draw.cpp` also supplies the `stb_decompress` decoder that expands the embedded fonts at runtime. | None to the vendored copy. `source/FTB.cpp` is adapted from ImGui's `misc/fonts/binary_to_compressed_c.cpp` (MIT); the adaptation is retained under the same MIT license. |
+| [Dear ImGui](https://github.com/ocornut/imgui) | `5a76f2adf1b0403b86a45010121fb32a6bff8680` (short: `5a76f2a`); `IMGUI_VERSION "1.92.9 WIP"`, `IMGUI_VERSION_NUM 19281`; submodule of VulkanWindow | MIT (Copyright (c) 2014-2026 Omar Cornut) | GUI library; statically linked. `imgui_draw.cpp` also supplies the `stb_decompress` decoder that expands the embedded fonts at runtime. | None to the vendored copy. `source/FTB.cpp` is adapted from ImGui's `misc/fonts/binary_to_compressed_c.cpp` (MIT); the adaptation is retained under the same MIT license. |
 | [VulkanMemoryAllocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator) | `b3cbbb43ea3a506dffe10759e205a41c27c35ae2` (short: `b3cbbb4`); submodule of VulkanWindow | MIT (Copyright (c) 2017-2026 Advanced Micro Devices, Inc. All rights reserved.) | Vulkan memory allocation; statically linked | None |
 | [GLFW](https://www.glfw.org/) | `43c9fb329116fcd57e94c8edc9ce2c1619a370a8` (short: `43c9fb3`); submodule of VulkanWindow | zlib (Copyright (c) 2002-2006 Marcus Geelnard; Copyright (c) 2006-2019 Camilla Löwy) | Window creation, input and event handling; statically linked | None |
 | [stb](https://github.com/nothings/stb) | Unversioned (see note below) | MIT **or** public domain (Sean Barrett) — dual-licensed, "choose whichever you prefer" | `stb_compress` and `stb_adler32` are copied into `source/FTB.cpp` (the project's own converter). `stb_decompress` is embedded in Dear ImGui's `imgui_draw.cpp` and used at runtime. | `stb_compress`/`stb_adler32` were copied into `source/FTB.cpp` and adapted to C++ (static helpers, `constexpr`/`[[maybe_unused]]` cleanup). |
@@ -26,8 +26,8 @@ dependencies below are statically linked into the release binaries.
 
 The copied stb code in `source/FTB.cpp` is the `stb_compress`/`stb_adler32`
 implementation from stb.h by Sean Barrett, dual-licensed as MIT or public
-domain. The exact upstream revision is not recorded in the source (a
-pre-existing gap, tracked by the code review); this file and
+domain. The exact upstream revision is not recorded in the source (a known
+gap); this file and
 [`licenses/stb-LICENSE.txt`](licenses/stb-LICENSE.txt) provide the required
 attribution until the stb revision is pinned.
 

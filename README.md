@@ -72,8 +72,8 @@ The binary is written to `build/FileToByte` (Linux) or
 ### Dependencies
 
 - [CMake](https://cmake.org/) ≥ 3.20
-- A compiler with C++20 support (GCC 10+, Clang 11+, or MSVC 19.2x+); the app
-  itself requests C++23, which current GCC, Clang and MSVC all provide
+- A C++23-capable compiler (GCC 13+, Clang 16+, or a recent MSVC / VS 2022);
+  the vendored dependencies need C++20 at minimum
 - The [Vulkan SDK](https://www.vulkan.org/) — or system Vulkan headers + loader
 
 GLFW, Dear ImGui, and VulkanMemoryAllocator come in transitively through the

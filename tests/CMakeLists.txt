@@ -5,6 +5,12 @@ add_executable(FileToByteTests test_convert.cpp ../source/FTB.cpp)
 target_include_directories(FileToByteTests PRIVATE ../source)
 target_compile_features(FileToByteTests PRIVATE cxx_std_23)
 
+# The concurrency test uses std::thread, which needs the platform thread
+# library on some platforms (e.g. -pthread on Linux); CMake handles the
+# per-platform details (no-op on Windows).
+find_package(Threads REQUIRED)
+target_link_libraries(FileToByteTests PRIVATE Threads::Threads)
+
 # Same warning level as the app target.
 if(MSVC)
   target_compile_options(FileToByteTests PRIVATE /W4)
